@@ -9,7 +9,6 @@ import {
 export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
-
 ) {
     try {
         const { userId, organizationId } = await getUserToken(req);
@@ -66,10 +65,11 @@ export async function GET(
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId, organizationId } = await getUserToken(req);
+        const { id: studentId } = await params;
 
         if (!userId) {
             return NextResponse.json(
@@ -93,7 +93,6 @@ export async function POST(
             );
         }
 
-        const studentId = params.id;
         const { content } = await req.json();
 
         if (!content || content.trim() === "") {
