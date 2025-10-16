@@ -8,10 +8,12 @@ import {
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
+
 ) {
     try {
         const { userId, organizationId } = await getUserToken(req);
+        const { id: studentId } = await params;
 
         if (!userId) {
             return NextResponse.json(
@@ -34,8 +36,6 @@ export async function GET(
                 { status: HttpStatusCode.BadRequest }
             );
         }
-
-        const studentId = params.id;
 
         const recommendations = await getStudentRecommendations(
             studentId,

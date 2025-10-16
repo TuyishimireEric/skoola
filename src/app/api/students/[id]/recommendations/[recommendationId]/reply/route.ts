@@ -5,7 +5,7 @@ import { createReply } from "@/server/queries/StudentRecommendations";
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string; recommendationId: string } }
+    { params }: { params: Promise<{ id: string; recommendationId: string }> }
 ) {
     try {
         const { userId } = await getUserToken(req);
@@ -21,7 +21,8 @@ export async function POST(
             );
         }
 
-        const { recommendationId } = params;
+        const { recommendationId } = await params;
+
         const { content } = await req.json();
 
         if (!content || content.trim() === "") {
