@@ -35,29 +35,6 @@ export interface ReplyWithAuthor {
     };
 }
 
-interface RawRecommendation {
-    id: string;
-    studentId: string;
-    content: string;
-    createdOn: Date;
-    updatedOn: Date;
-    authorId: string;
-    authorName: string;
-    authorRole: number;
-    authorAvatar: string | null;
-}
-
-interface RawReply {
-    id: string;
-    recommendationId: string;
-    content: string;
-    createdOn: Date;
-    authorId: string;
-    authorName: string;
-    authorRole: number;
-    authorAvatar: string | null;
-}
-
 const getRoleName = (roleId: number): string => {
     switch (roleId) {
         case 1:

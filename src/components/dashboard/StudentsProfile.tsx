@@ -14,16 +14,13 @@ import {
   AlertTriangle,
   CheckCircle,
   Award,
-  MessageSquare,
   Bell,
   Download,
   Edit,
   MoreVertical,
   Loader2,
-  Send,
   Sparkles,
   Bot,
-  Users,
   RefreshCw,
   ChevronDown,
   ChevronUp,
@@ -35,27 +32,6 @@ import { getInitials, getStatusColor, formatStringDate, getTimeAgo } from "@/uti
 import { QuickActions } from "./QuickActions";
 import { useClientSession } from "@/hooks/user/useClientSession";
 import StudentRecommendations from "../students/StudentRecommendations";
-
-interface Recommendation {
-  id: string;
-  author: {
-    name: string;
-    role: string;
-    avatar?: string;
-  };
-  content: string;
-  createdAt: string;
-  replies?: Array<{
-    id: string;
-    author: {
-      name: string;
-      role: string;
-      avatar?: string;
-    };
-    content: string;
-    createdAt: string;
-  }>;
-}
 
 const StudentDetailPage: React.FC = () => {
   const params = useParams();
@@ -73,9 +49,6 @@ const StudentDetailPage: React.FC = () => {
     refetch: refetchInsights,
   } = useAIInsights(studentId, !!student);
 
-  const [newComment, setNewComment] = useState("");
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyContent, setReplyContent] = useState("");
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [showPerformanceDetails, setShowPerformanceDetails] = useState(false);
   const [showCoursesBreakdown, setShowCoursesBreakdown] = useState(false);
@@ -91,32 +64,6 @@ const StudentDetailPage: React.FC = () => {
       setShowAIInsights(true);
     }
   }, [aiInsightsData, isLoadingInsights]);
-
-  // Mock recommendations data - Replace with actual API call
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([
-    {
-      id: "1",
-      author: {
-        name: "Mrs. Johnson",
-        role: "Math Teacher",
-        avatar: "",
-      },
-      content: "Great improvement in algebra this term! Keep up the good work with homework consistency.",
-      createdAt: "2024-11-08T10:30:00Z",
-      replies: [
-        {
-          id: "r1",
-          author: {
-            name: "Mrs. Kalisa",
-            role: "Parent",
-            avatar: "",
-          },
-          content: "Thank you for the feedback! We'll continue to support at home.",
-          createdAt: "2024-11-09T14:20:00Z",
-        },
-      ],
-    },
-  ]);
 
   useEffect(() => {
     if (!student) return;
@@ -344,56 +291,6 @@ const StudentDetailPage: React.FC = () => {
     }
 
     return { labels, values };
-  };
-
-  const handlePostComment = () => {
-    if (!newComment.trim()) return;
-
-    const newRecommendation: Recommendation = {
-      id: Date.now().toString(),
-      author: {
-        name: "Current User",
-        role: "Teacher",
-        avatar: "",
-      },
-      content: newComment,
-      createdAt: new Date().toISOString(),
-      replies: [],
-    };
-
-    setRecommendations([newRecommendation, ...recommendations]);
-    setNewComment("");
-  };
-
-  const handlePostReply = (recommendationId: string) => {
-    if (!replyContent.trim()) return;
-
-    setRecommendations(
-      recommendations.map((rec) => {
-        if (rec.id === recommendationId) {
-          return {
-            ...rec,
-            replies: [
-              ...(rec.replies || []),
-              {
-                id: Date.now().toString(),
-                author: {
-                  name: "Current User",
-                  role: "Parent",
-                  avatar: "",
-                },
-                content: replyContent,
-                createdAt: new Date().toISOString(),
-              },
-            ],
-          };
-        }
-        return rec;
-      })
-    );
-
-    setReplyContent("");
-    setReplyingTo(null);
   };
 
   const getInsightIcon = (type: string) => {
