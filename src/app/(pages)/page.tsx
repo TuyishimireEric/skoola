@@ -15,7 +15,7 @@ const HomePage = () => {
   const [userMenuOpen, setUserMenuOpen] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
-  const { userId, userEmail, userImage, userName } =
+  const { userId, userEmail, userImage, userName, userRoleId } =
     useClientSession();
 
   const userMenuItems: UserMenuItem[] = [
@@ -129,8 +129,12 @@ const HomePage = () => {
           <div className="hidden md:flex items-center gap-6">
             <Link href="#features" className="text-gray-600 hover:text-green-600 transition-colors text-sm lg:text-base">Features</Link>
             <Link href="#how-it-works" className="text-gray-600 hover:text-green-600 transition-colors text-sm lg:text-base">How It Works</Link>
-            {userId && (
+            {userRoleId == 1 && (
               <Link href="/dashboard" className="text-gray-600 hover:text-green-600 transition-colors text-sm lg:text-base">Dashboard</Link>
+            )}
+
+            {userRoleId == 6 && (
+              <Link href="/students" className="text-gray-600 hover:text-green-600 transition-colors text-sm lg:text-base">Students</Link>
             )}
 
             {userId ? (

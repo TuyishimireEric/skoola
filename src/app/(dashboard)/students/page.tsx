@@ -6,7 +6,7 @@ import { useClientSession } from "@/hooks/user/useClientSession";
 import { Loader2 } from "lucide-react";
 
 const Dashboard: React.FC = () => {
-  const { isLoading } = useClientSession();
+  const { isLoading, userRoleId } = useClientSession();
 
   if (isLoading) {
     return (
@@ -22,7 +22,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex flex-col h-full min-h-0">
       <TopMenu
-        title={"Students Management"}
+        title={userRoleId == 6 ? "My Students" : "Students Management"}
         subTitle={" Manage and monitor all your students in one place"}
         searchInput={false}
       />

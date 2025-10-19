@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { useClientSession } from "@/hooks/user/useClientSession";
 
 // Types
 interface NavItem {
@@ -24,6 +25,102 @@ interface NavItem {
   path: string;
 }
 
+// Skeleton Components
+const NavItemSkeleton = ({ isCollapsed }: { isCollapsed: boolean }) => (
+  <div className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 animate-pulse`}>
+    <div className="w-5 h-5 bg-gray-200 rounded"></div>
+    {!isCollapsed && <div className="h-4 bg-gray-200 rounded w-20"></div>}
+  </div>
+);
+
+const DesktopSidebarSkeleton = ({ isCollapsed }: { isCollapsed: boolean }) => (
+  <aside
+    className={`hidden lg:flex flex-col shadow-lg border-r border-gray-200 overflow-hidden min-h-screen transition-all duration-300 ${isCollapsed ? "w-20 min-w-20" : "min-w-64"
+      }`}
+  >
+    {/* Header */}
+    <div className="p-6 border-b border-gray-200">
+      <div className="flex items-center justify-between">
+        {!isCollapsed && (
+          <div className="flex items-center gap-2 animate-pulse">
+            <div className="w-8 h-8 bg-gray-200 rounded"></div>
+            <div className="h-6 bg-gray-200 rounded w-32"></div>
+          </div>
+        )}
+        <button
+          onClick={() => { }}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors ml-auto"
+          disabled
+        >
+          {isCollapsed ? (
+            <ChevronRight className="w-5 h-5 text-gray-300" />
+          ) : (
+            <ChevronLeft className="w-5 h-5 text-gray-300" />
+          )}
+        </button>
+      </div>
+    </div>
+
+    {/* Navigation */}
+    <nav className="flex-1 p-4 space-y-1">
+      {[1, 2, 3, 4].map((item) => (
+        <NavItemSkeleton key={item} isCollapsed={isCollapsed} />
+      ))}
+    </nav>
+
+    {/* Footer Actions */}
+    <div className="p-4 border-t border-gray-200 space-y-1">
+      <NavItemSkeleton isCollapsed={isCollapsed} />
+    </div>
+  </aside>
+);
+
+const MobileSidebarSkeleton = () => (
+  <motion.aside
+    initial={{ x: -300, opacity: 0 }}
+    animate={{ x: 0, opacity: 1 }}
+    className="lg:hidden fixed left-0 top-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl border-r border-gray-200 z-50 overflow-y-auto"
+  >
+    {/* Header */}
+    <div className="p-6 border-b border-gray-200 bg-white">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 animate-pulse">
+          <div className="w-8 h-8 bg-gray-200 rounded"></div>
+          <div className="h-6 bg-gray-200 rounded w-32"></div>
+        </div>
+        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" disabled>
+          <X className="w-5 h-5 text-gray-300" />
+        </button>
+      </div>
+    </div>
+
+    {/* Navigation */}
+    <nav className="flex-1 p-4 space-y-1">
+      {[1, 2, 3, 4].map((item) => (
+        <NavItemSkeleton key={item} isCollapsed={false} />
+      ))}
+    </nav>
+
+    {/* Footer Actions */}
+    <div className="p-4 border-t border-gray-200 space-y-1">
+      <NavItemSkeleton isCollapsed={false} />
+    </div>
+  </motion.aside>
+);
+
+const MobileHeaderSkeleton = () => (
+  <div className="lg:hidden fixed top-0 left-0 right-0 bg-white shadow-md border-b border-gray-200 z-30 p-4">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3 animate-pulse">
+        <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+        <div className="w-8 h-8 bg-gray-200 rounded"></div>
+        <div className="h-5 bg-gray-200 rounded w-32"></div>
+      </div>
+      <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+    </div>
+  </div>
+);
+
 // Reusable SideNav Component 
 const SideNav = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -31,6 +128,7 @@ const SideNav = () => {
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { userRoleId, isLoading } = useClientSession();
 
   // Detect mobile screen size
   useEffect(() => {
@@ -72,6 +170,14 @@ const SideNav = () => {
       path: "/courses",
     }
   ];
+
+  if (userRoleId == 6) {
+    // Remove Students and Courses for Parent role
+    const filteredNavItems = navItems.filter(
+      (item) => item.label === "Students"
+    );
+    navItems.splice(0, navItems.length, ...filteredNavItems);
+  }
 
   // Efficient active state check
   const isActive = (path: string) => {
@@ -117,6 +223,17 @@ const SideNav = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMobile, isMobileOpen]);
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return (
+      <>
+        <MobileHeaderSkeleton />
+        <DesktopSidebarSkeleton isCollapsed={isCollapsed} />
+        <div className="lg:hidden pt-16"></div>
+      </>
+    );
+  }
 
   // Desktop sidebar component
   const DesktopSidebar = () => (
@@ -183,8 +300,8 @@ const SideNav = () => {
               key={item.path}
               onClick={() => handleNavigation(item.path)}
               className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${active
-                  ? "bg-gradient-to-r from-green-500 to-amber-500 text-white shadow-lg shadow-green-500/30"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                ? "bg-gradient-to-r from-green-500 to-amber-500 text-white shadow-lg shadow-green-500/30"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               aria-current={active ? "page" : undefined}
             >
@@ -286,8 +403,8 @@ const SideNav = () => {
                     key={item.path}
                     onClick={() => handleNavigation(item.path)}
                     className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${active
-                        ? "bg-gradient-to-r from-green-500 to-amber-500 text-white shadow-lg shadow-green-500/30"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      ? "bg-gradient-to-r from-green-500 to-amber-500 text-white shadow-lg shadow-green-500/30"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                       }`}
                     aria-current={active ? "page" : undefined}
                   >
