@@ -12,7 +12,6 @@ import {
   getUserOrganizations,
   updateLastLogin,
 } from "@/server/queries";
-import { randomBytes } from "crypto";
 import { Session } from "@/server/db/schema";
 import bcrypt from "bcryptjs";
 import { generateUserCode } from "@/utils/functions";

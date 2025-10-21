@@ -14,7 +14,6 @@ import {
   CheckCircle,
   ChevronRight,
   Loader2,
-  MoreVertical,
 } from "lucide-react";
 import { useStudents } from "@/hooks/user/useStudents";
 import { StudentListResponse } from "@/server/queries/students";

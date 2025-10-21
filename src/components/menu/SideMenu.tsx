@@ -75,39 +75,6 @@ const DesktopSidebarSkeleton = ({ isCollapsed }: { isCollapsed: boolean }) => (
   </aside>
 );
 
-const MobileSidebarSkeleton = () => (
-  <motion.aside
-    initial={{ x: -300, opacity: 0 }}
-    animate={{ x: 0, opacity: 1 }}
-    className="lg:hidden fixed left-0 top-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl border-r border-gray-200 z-50 overflow-y-auto"
-  >
-    {/* Header */}
-    <div className="p-6 border-b border-gray-200 bg-white">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 animate-pulse">
-          <div className="w-8 h-8 bg-gray-200 rounded"></div>
-          <div className="h-6 bg-gray-200 rounded w-32"></div>
-        </div>
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" disabled>
-          <X className="w-5 h-5 text-gray-300" />
-        </button>
-      </div>
-    </div>
-
-    {/* Navigation */}
-    <nav className="flex-1 p-4 space-y-1">
-      {[1, 2, 3, 4].map((item) => (
-        <NavItemSkeleton key={item} isCollapsed={false} />
-      ))}
-    </nav>
-
-    {/* Footer Actions */}
-    <div className="p-4 border-t border-gray-200 space-y-1">
-      <NavItemSkeleton isCollapsed={false} />
-    </div>
-  </motion.aside>
-);
-
 const MobileHeaderSkeleton = () => (
   <div className="lg:hidden fixed top-0 left-0 right-0 bg-white shadow-md border-b border-gray-200 z-30 p-4">
     <div className="flex items-center justify-between">
