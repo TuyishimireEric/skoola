@@ -96,7 +96,7 @@ export async function getStudentList(params: StudentListParams): Promise<{
     sortOrder,
     activeOnly,
     grade,
-    parentId, // Added parentId parameter
+    parentId,
   } = params;
 
   const offset = (page - 1) * pageSize;
@@ -106,13 +106,17 @@ export async function getStudentList(params: StudentListParams): Promise<{
   today.setHours(0, 0, 0, 0);
   const todayISO = today.toISOString();
 
-  // Build WHERE conditions with grade filter and parentId filter
-  const whereConditions = and(
+  // Build base WHERE conditions (without parent filter and search)
+  const baseWhereConditions = and(
     eq(OrganizationUser.OrganizationId, organizationId),
     eq(OrganizationUser.RoleId, 2), // Student role
     activeOnly ? eq(OrganizationUser.Status, "Active") : undefined,
-    grade ? eq(OrganizationUser.Grade, grade) : undefined,
-    // Add parentId filter - only show students linked to this parent
+    grade ? eq(OrganizationUser.Grade, grade) : undefined
+  );
+
+  // Build complete WHERE conditions including parent filter
+  const completeWhereConditions = and(
+    baseWhereConditions,
     parentId ? eq(ParentStudent.ParentId, parentId) : undefined,
     searchText
       ? or(
@@ -124,29 +128,37 @@ export async function getStudentList(params: StudentListParams): Promise<{
       : undefined
   );
 
-  // Get total count for pagination
-  const totalCountResult = await db
+  // Get total count for pagination - Use DISTINCT to avoid counting duplicates
+  const countQuery = db
     .select({
-      count: sql<number>`COUNT(*)`,
+      count: sql<number>`COUNT(DISTINCT ${User.Id})`,
     })
     .from(User)
-    .innerJoin(OrganizationUser, eq(User.Id, OrganizationUser.UserId))
-  // Change to innerJoin when parentId is provided to ensure only linked students are counted
-  [parentId ? 'innerJoin' : 'leftJoin'](
-    ParentStudent,
-    eq(User.Id, ParentStudent.StudentId)
-  )
+    .innerJoin(OrganizationUser, eq(User.Id, OrganizationUser.UserId));
+
+  // Add appropriate join for ParentStudent based on parentId
+  if (parentId) {
+    countQuery.innerJoin(
+      ParentStudent,
+      eq(User.Id, ParentStudent.StudentId)
+    );
+  } else {
+    countQuery.leftJoin(ParentStudent, eq(User.Id, ParentStudent.StudentId));
+  }
+
+  const totalCountResult = await countQuery
     .leftJoin(
       sql`"User" as parent_user`,
       sql`"ParentStudent"."ParentId" = parent_user."Id"`
     )
-    .where(whereConditions);
+    .where(completeWhereConditions);
 
   const totalCount = totalCountResult[0]?.count || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
   // Main optimized query with attendance and performance data
-  const studentsQuery = db
+  // Using DISTINCT ON to ensure no duplicate students
+  const studentsQueryBase = db
     .select({
       id: User.Id,
       fullName: User.FullName,
@@ -156,11 +168,61 @@ export async function getStudentList(params: StudentListParams): Promise<{
       status: OrganizationUser.Status,
       grade: OrganizationUser.Grade,
       userNumber: User.UserNumber,
-      parentId: sql<string | null>`parent_user."Id"`,
-      parentName: sql<string | null>`parent_user."FullName"`,
-      parentEmail: sql<string | null>`parent_user."Email"`,
-      parentPhone: sql<string | null>`parent_user."Phone"`,
-      parentRelationship: sql<string | null>`"ParentStudent"."Relationship"`,
+      // Get the first parent if multiple exist (prioritize the one matching parentId if provided)
+      parentId: sql<string | null>`${parentId
+          ? sql`parent_user."Id"`
+          : sql`(
+        SELECT pu."Id" 
+        FROM "ParentStudent" ps 
+        INNER JOIN "User" pu ON ps."ParentId" = pu."Id"
+        WHERE ps."StudentId" = ${User.Id}
+        ORDER BY ps."CreatedOn" DESC
+        LIMIT 1
+      )`
+        }`,
+      parentName: sql<string | null>`${parentId
+          ? sql`parent_user."FullName"`
+          : sql`(
+        SELECT pu."FullName" 
+        FROM "ParentStudent" ps 
+        INNER JOIN "User" pu ON ps."ParentId" = pu."Id"
+        WHERE ps."StudentId" = ${User.Id}
+        ORDER BY ps."CreatedOn" DESC
+        LIMIT 1
+      )`
+        }`,
+      parentEmail: sql<string | null>`${parentId
+          ? sql`parent_user."Email"`
+          : sql`(
+        SELECT pu."Email" 
+        FROM "ParentStudent" ps 
+        INNER JOIN "User" pu ON ps."ParentId" = pu."Id"
+        WHERE ps."StudentId" = ${User.Id}
+        ORDER BY ps."CreatedOn" DESC
+        LIMIT 1
+      )`
+        }`,
+      parentPhone: sql<string | null>`${parentId
+          ? sql`parent_user."Phone"`
+          : sql`(
+        SELECT pu."Phone" 
+        FROM "ParentStudent" ps 
+        INNER JOIN "User" pu ON ps."ParentId" = pu."Id"
+        WHERE ps."StudentId" = ${User.Id}
+        ORDER BY ps."CreatedOn" DESC
+        LIMIT 1
+      )`
+        }`,
+      parentRelationship: sql<string | null>`${parentId
+          ? sql`"ParentStudent"."Relationship"`
+          : sql`(
+        SELECT ps."Relationship" 
+        FROM "ParentStudent" ps 
+        WHERE ps."StudentId" = ${User.Id}
+        ORDER BY ps."CreatedOn" DESC
+        LIMIT 1
+      )`
+        }`,
       totalStars: sql<number>`COALESCE(game_stats.total_stars, 0)`,
       totalCourses: sql<number>`COALESCE(game_stats.total_courses, 0)`,
       currentStreak: sql<number>`COALESCE(today_streak.current_streak, 0)`,
@@ -275,17 +337,21 @@ export async function getStudentList(params: StudentListParams): Promise<{
         GROUP BY cp."StudentId"
       ) as performance_stats`,
       sql`"User"."Id" = performance_stats."StudentId"`
-    )
-  // Change to innerJoin when parentId is provided to ensure only linked students are returned
-  [parentId ? 'innerJoin' : 'leftJoin'](
-    ParentStudent,
-    eq(User.Id, ParentStudent.StudentId)
-  )
-    .leftJoin(
-      sql`"User" as parent_user`,
-      sql`"ParentStudent"."ParentId" = parent_user."Id"`
-    )
-    .where(whereConditions);
+    );
+
+  // Add appropriate join for ParentStudent based on parentId
+  let studentsQuery;
+  if (parentId) {
+    studentsQuery = studentsQueryBase
+      .innerJoin(ParentStudent, eq(User.Id, ParentStudent.StudentId))
+      .leftJoin(
+        sql`"User" as parent_user`,
+        sql`"ParentStudent"."ParentId" = parent_user."Id"`
+      )
+      .where(completeWhereConditions);
+  } else {
+    studentsQuery = studentsQueryBase.where(baseWhereConditions);
+  }
 
   // Apply sorting and pagination
   const direction = sortOrder === "asc" ? asc : desc;
@@ -347,8 +413,13 @@ export async function getStudentList(params: StudentListParams): Promise<{
 
   const students = await sortedQuery.limit(pageSize).offset(offset);
 
+  // Remove any potential duplicates at the application level as a safety measure
+  const uniqueStudents = Array.from(
+    new Map(students.map((s) => [s.id, s])).values()
+  );
+
   // Transform results
-  const transformedStudents = students.map(transformStudent);
+  const transformedStudents = uniqueStudents.map(transformStudent);
 
   return {
     students: transformedStudents,
@@ -398,12 +469,14 @@ function transformStudent(student: RawStudentData): StudentListResponse {
     totalCourses: student.totalCourses,
     currentStreak: student.currentStreak,
     // Convert null to 0 for frontend display
-    attendanceRate: student.attendanceRate !== null
-      ? Math.round(student.attendanceRate)
-      : 0,
-    performanceScore: student.performanceScore !== null
-      ? Math.round(student.performanceScore)
-      : 0,
+    attendanceRate:
+      student.attendanceRate !== null
+        ? Math.round(student.attendanceRate)
+        : 0,
+    performanceScore:
+      student.performanceScore !== null
+        ? Math.round(student.performanceScore)
+        : 0,
   };
 }
 
