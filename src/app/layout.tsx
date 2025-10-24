@@ -180,7 +180,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           Skip to content
         </a>
 
-        <main id="main-content">
+        <main id="main-content" className="bg-gradient-to-br from-white via-amber-50 to-white">
           <Provider>
             {children}
             <Toaster />
