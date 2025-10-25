@@ -1,0 +1,510 @@
+
+body#main_auth {
+    background: linear-gradient(135deg, var(--ur-primary) 0%, var(--ur-secondary) 50%, var(--ur-accent) 100%) !important;
+    font-family: 'Poppins', sans-serif !important;
+    min-height: 100vh !important;
+    min-width: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+}
+
+/* Add background pattern */
+body#main_auth::before {
+    content: '' !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>') !important;
+    opacity: 0.3 !important;
+    z-index: 1 !important;
+}
+
+/* Main container styling - Perfect centering */
+body#main_auth .main.container-fluid {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-height: 100vh !important;
+    padding: 20px !important;
+    position: relative !important;
+    z-index: 10 !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+}
+
+/* Login container - Enhanced centering and responsiveness */
+body#main_auth #login {
+    background: var(--ur-white) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    max-width: 1100px !important;
+    width: 95% !important;
+    min-height: 600px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: auto 1fr !important;
+    transform: translateY(0) !important;
+    animation: slideIn 0.6s ease-out !important;
+}
+
+/* Smooth entrance animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hide the original Koha heading */
+body#main_auth #login h1 {
+    display: none !important;
+}
+
+/* Create the UR branding section */
+body#main_auth #login::before {
+    content: '' !important;
+    grid-column: 1 !important;
+    grid-row: 1 / -1 !important;
+    background: linear-gradient(135deg, var(--ur-primary) 0%, var(--ur-secondary) 100%) !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+/* Add UR content to the branding section */
+body#main_auth #login::after {
+    content: 'UR ILMS\AIntegrated Library Management System\A\AStaff Access Portal\A\A✓ Comprehensive Catalog Management\A✓ User & Circulation Control\A✓ Advanced Reporting & Analytics\A✓ Secure Access Control\A✓ Mobile-Responsive Interface' !important;
+    white-space: pre-line !important;
+    grid-column: 1 !important;
+    grid-row: 1 / -1 !important;
+    background: linear-gradient(135deg, var(--ur-primary) 0%, var(--ur-secondary) 100%) !important;
+    color: var(--ur-white) !important;
+    padding: 60px 40px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    font-family: 'Poppins', sans-serif !important;
+    position: relative !important;
+    z-index: 3 !important;
+    background-image: url('https://ur.ac.rw/images/University%20of%20Rwanda%20-%20LOGO%20LANDSCAPE%20_RV%20Official.png') !important;
+    background-repeat: no-repeat !important;
+    background-position: center top 60px !important;
+    background-size: 220px auto !important;
+    padding-top: 150px !important;
+    font-size: 1rem !important;
+    line-height: 1.8 !important;
+    font-weight: 300 !important;
+}
+
+/* Style the form area */
+body#main_auth #login form {
+    grid-column: 2 !important;
+    grid-row: 1 / -1 !important;
+    padding: 50px 40px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    background: var(--ur-white) !important;
+    position: relative !important;
+    z-index: 3 !important;
+}
+
+/* Add form header */
+body#main_auth #login form::before {
+    content: 'Staff Login\APlease sign in to access the library management system' !important;
+    white-space: pre-line !important;
+    font-size: 1.8rem !important;
+    font-weight: 600 !important;
+    color: var(--ur-primary) !important;
+    text-align: center !important;
+    margin-bottom: 30px !important;
+    line-height: 1.4 !important;
+    font-family: 'Poppins', sans-serif !important;
+    display: block !important;
+}
+
+/* Style form paragraphs (form groups) */
+body#main_auth #login form p {
+    margin-bottom: 20px !important;
+    position: relative !important;
+}
+
+/* Style labels */
+body#main_auth #login form label {
+    display: block !important;
+    margin-bottom: 8px !important;
+    font-weight: 500 !important;
+    color: var(--ur-text-dark) !important;
+    font-size: 0.95rem !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Style all input fields */
+body#main_auth #login input[type="text"],
+body#main_auth #login input[type="password"],
+body#main_auth #login select {
+    width: 100% !important;
+    padding: 12px 15px !important;
+    border: 2px solid var(--ur-border) !important;
+    border-radius: 8px !important;
+    font-size: 1rem !important;
+    transition: all 0.3s ease !important;
+    background: var(--ur-white) !important;
+    font-family: 'Poppins', sans-serif !important;
+    box-shadow: none !important;
+}
+
+/* Focus states for inputs */
+body#main_auth #login input[type="text"]:focus,
+body#main_auth #login input[type="password"]:focus,
+body#main_auth #login select:focus {
+    outline: none !important;
+    border-color: var(--ur-accent) !important;
+    box-shadow: 0 0 0 3px rgba(0, 149, 201, 0.1) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Style the submit button */
+body#main_auth #login input[type="submit"],
+body#main_auth #login .btn-primary {
+    width: 100% !important;
+    padding: 14px !important;
+    background: linear-gradient(135deg, var(--ur-primary) 0%, var(--ur-secondary) 100%) !important;
+    color: var(--ur-white) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-top: 15px !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Submit button hover effect */
+body#main_auth #login input[type="submit"]:hover,
+body#main_auth #login .btn-primary:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(0, 98, 139, 0.4) !important;
+    background: linear-gradient(135deg, var(--ur-secondary) 0%, var(--ur-accent) 100%) !important;
+}
+
+/* Style warning messages */
+body#main_auth .warning {
+    background: rgba(255, 193, 7, 0.1) !important;
+    border: 1px solid rgba(255, 193, 7, 0.3) !important;
+    color: #856404 !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-size: 0.85rem !important;
+    margin-top: 5px !important;
+    font-family: 'Poppins', sans-serif !important;
+    display: block !important;
+}
+
+/* Style error messages */
+body#main_auth #messages .alert,
+body#main_auth .error {
+    background: #f8d7da !important;
+    border: 1px solid #f5c6cb !important;
+    color: #721c24 !important;
+    padding: 12px 15px !important;
+    border-radius: 6px !important;
+    margin-bottom: 20px !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Status indicator */
+body#main_auth::after {
+    content: "● System Online" !important;
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: var(--ur-white) !important;
+    padding: 8px 15px !important;
+    border-radius: 15px !important;
+    font-size: 0.8rem !important;
+    z-index: 1000 !important;
+    backdrop-filter: blur(10px) !important;
+    font-family: 'Poppins', sans-serif !important;
+  width: 100% !important;
+}
+
+/* Hide scripts and unwanted elements */
+body#main_auth script[src*="conoret.com"] {
+    display: none !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Responsive design for tablets and medium screens */
+@media (max-width: 992px) {
+    body#main_auth #login {
+        max-width: 800px !important;
+        width: 90% !important;
+        min-height: 500px !important;
+    }
+
+    body#main_auth #login::after {
+        font-size: 0.95rem !important;
+        background-size: 200px auto !important;
+        padding-top: 130px !important;
+    }
+
+    body#main_auth #login form {
+        padding: 40px 35px !important;
+    }
+}
+
+/* Responsive design for tablets */
+@media (max-width: 768px) {
+    body#main_auth .main.container-fluid {
+        padding: 15px !important;
+    }
+
+    body#main_auth #login {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto 1fr !important;
+        margin: 0 auto !important;
+        border-radius: 15px !important;
+        min-height: auto !important;
+        max-width: 600px !important;
+        width: 95% !important;
+    }
+
+    body#main_auth #login::before {
+        display: none !important;
+    }
+
+    body#main_auth #login::after {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        padding: 30px 20px !important;
+        background-position: center top 25px !important;
+        background-size: 160px auto !important;
+        padding-top: 95px !important;
+        min-height: 180px !important;
+        font-size: 0.85rem !important;
+        line-height: 1.6 !important;
+    }
+
+    body#main_auth #login form {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+        padding: 25px 20px !important;
+    }
+
+    body#main_auth #login form::before {
+        font-size: 1.4rem !important;
+        margin-bottom: 25px !important;
+    }
+}
+
+/* Mobile responsive - Enhanced */
+@media (max-width: 480px) {
+    body#main_auth .main.container-fluid {
+        padding: 10px !important;
+        min-height: 100vh !important;
+    }
+
+    body#main_auth #login {
+        max-width: 100% !important;
+        width: 95% !important;
+        margin: 0 auto !important;
+        border-radius: 12px !important;
+    }
+
+    body#main_auth #login::after {
+        background-size: 130px auto !important;
+        padding-top: 75px !important;
+        font-size: 0.75rem !important;
+        min-height: 140px !important;
+        padding: 15px 15px !important;
+        padding-top: 75px !important;
+        line-height: 1.5 !important;
+    }
+
+    body#main_auth #login form {
+        padding: 20px 15px !important;
+    }
+
+    body#main_auth #login form::before {
+        font-size: 1.2rem !important;
+        margin-bottom: 20px !important;
+        line-height: 1.3 !important;
+    }
+
+    body#main_auth #login input[type="text"],
+    body#main_auth #login input[type="password"],
+    body#main_auth #login select {
+        padding: 12px 15px !important;
+        font-size: 16px !important; /* Prevents zoom on iOS */
+        border-radius: 6px !important;
+    }
+
+    body#main_auth #login input[type="submit"],
+    body#main_auth #login .btn-primary {
+        padding: 14px !important;
+        font-size: 0.95rem !important;
+        border-radius: 6px !important;
+    }
+
+    body#main_auth #login form p {
+        margin-bottom: 18px !important;
+    }
+
+    body#main_auth #login form label {
+        font-size: 0.9rem !important;
+        margin-bottom: 6px !important;
+    }
+
+    body#main_auth .warning {
+        font-size: 0.8rem !important;
+        padding: 6px 10px !important;
+    }
+}
+
+/* Extra small screens and very mobile devices */
+@media (max-width: 360px) {
+    body#main_auth #login {
+        width: 98% !important;
+        border-radius: 10px !important;
+    }
+
+    body#main_auth #login::after {
+        background-size: 110px auto !important;
+        padding-top: 65px !important;
+        font-size: 0.7rem !important;
+        min-height: 120px !important;
+        padding: 12px !important;
+        padding-top: 65px !important;
+    }
+
+    body#main_auth #login form {
+        padding: 15px 12px !important;
+    }
+
+    body#main_auth #login form::before {
+        font-size: 1.1rem !important;
+        margin-bottom: 15px !important;
+    }
+
+    body#main_auth #login input[type="text"],
+    body#main_auth #login input[type="password"],
+    body#main_auth #login select {
+        padding: 10px 12px !important;
+        font-size: 16px !important;
+    }
+
+    body#main_auth #login input[type="submit"],
+    body#main_auth #login .btn-primary {
+        padding: 12px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* Large screens optimization */
+@media (min-width: 1200px) {
+    body#main_auth #login {
+        max-width: 1200px !important;
+        min-height: 650px !important;
+    }
+
+    body#main_auth #login::after {
+        background-size: 250px auto !important;
+        padding-top: 170px !important;
+        font-size: 1.1rem !important;
+        padding: 70px 50px !important;
+        padding-top: 170px !important;
+    }
+
+    body#main_auth #login form {
+        padding: 60px 50px !important;
+    }
+
+    body#main_auth #login form::before {
+        font-size: 2rem !important;
+        margin-bottom: 35px !important;
+    }
+}
+
+/* Ultra-wide screens */
+@media (min-width: 1600px) {
+    body#main_auth #login {
+        max-width: 1400px !important;
+        min-height: 700px !important;
+    }
+}
+body#main_auth #login input:focus + label {
+    color: var(--ur-accent) !important;
+}
+
+/* Custom scrollbar */
+body#main_auth ::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+body#main_auth ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body#main_auth ::-webkit-scrollbar-thumb {
+    background: var(--ur-accent) !important;
+    border-radius: 3px !important;
+}
+
+body#main_auth ::-webkit-scrollbar-thumb:hover {
+    background: var(--ur-primary) !important;
+}
+
+/* Hide any version info or unwanted elements */
+body#main_auth .version {
+    display: none !important;
+}

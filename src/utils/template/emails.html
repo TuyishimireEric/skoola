@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Progress Report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Comic Neue', cursive;
+    }
+    
+    body {
+      background-color: #f0f9e8;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: linear-gradient(to bottom, #ffffff, #f4fff0);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 100, 0, 0.15);
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #4caf50, #8bc34a);
+      padding: 25px;
+      text-align: center;
+    }
+    
+    .header img {
+      max-width: 180px;
+      margin-bottom: 15px;
+    }
+    
+    .header h1 {
+      color: white;
+      font-size: 32px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      margin: 0;
+    }
+    
+    .content {
+      padding: 30px;
+    }
+    
+    .greeting {
+      font-size: 24px;
+      color: #2e7d32;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    
+    .intro {
+      color: #444;
+      margin-bottom: 20px;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+    
+    .highlight {
+      font-weight: bold;
+      color: #43a047;
+    }
+    
+    .section {
+      background: linear-gradient(to right, #e8f5e9, #c8e6c9);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      border-left: 6px solid #43a047;
+    }
+    
+    .section-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .section-icon {
+      font-size: 28px;
+      margin-right: 10px;
+    }
+    
+    .section-heading {
+      font-size: 22px;
+      color: #2e7d32;
+      font-weight: bold;
+    }
+    
+    .info-item {
+      margin-bottom: 10px;
+      font-size: 17px;
+      color: #444;
+    }
+    
+    .missed-list {
+      padding-left: 30px;
+    }
+    
+    .missed-list li {
+      margin-bottom: 8px;
+      position: relative;
+      list-style-type: none;
+      padding-left: 10px;
+    }
+    
+    .missed-list li:before {
+      content: "•";
+      color: #43a047;
+      font-weight: bold;
+      font-size: 25px;
+      position: absolute;
+      left: -15px;
+      top: -8px;
+    }
+    
+    .footer {
+      background: linear-gradient(135deg, #4caf50, #8bc34a);
+      padding: 20px;
+      text-align: center;
+      color: white;
+    }
+    
+    .footer p {
+      margin-bottom: 8px;
+    }
+    
+    .footer a {
+      color: #ffeb3b;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        border-radius: 8px;
+      }
+      
+      .header {
+        padding: 15px;
+      }
+      
+      .header h1 {
+        font-size: 26px;
+      }
+      
+      .content {
+        padding: 20px;
+      }
+      
+      .greeting {
+        font-size: 20px;
+      }
+      
+      .section {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <img src="https://via.placeholder.com/180x60?text=Kids+School+Logo" alt="Kids School Logo">
+      <h1>✨ Daily Progress Report ✨</h1>
+    </div>
+    
+    <!-- Content -->
+    <div class="content">
+      <h2 class="greeting">Hello Eric! 👋</h2>
+      <p class="intro">Here's a fun summary of <span class="highlight">Mutware Yvan</span>'s progress for <span class="highlight">October 25, 2023</span>:</p>
+      
+      <!-- Progress Summary -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">📊</span>
+          <h3 class="section-heading">Progress Summary</h3>
+        </div>
+        <div class="info-item"><strong>🎓 Courses Studied:</strong> Fun with Numbers</div>
+        <div class="info-item"><strong>📚 Subject:</strong> Mathematics</div>
+        <div class="info-item"><strong>🏆 Highest Score:</strong> 100</div>
+        <div class="info-item"><strong>📈 Daily Average Score:</strong> 100.00</div>
+        <div class="info-item"><strong>⏱️ Time Spent Learning:</strong> 1 hour and 5 minutes</div>
+        <div class="info-item"><strong>🌟 Levels Completed:</strong> 120</div>
+      </div>
+      
+      <!-- Missed Questions -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">📝</span>
+          <h3 class="section-heading">Missed Questions</h3>
+        </div>
+        <ul class="missed-list">
+          <li>6x3=18</li>
+        </ul>
+      </div>
+      
+      <!-- Recommendations -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">🎯</span>
+          <h3 class="section-heading">Recommendations</h3>
+        </div>
+        <p>We recommend focusing on <span class="highlight">multiplication tables</span> to improve further.</p>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <p>Need help? Contact us at <a href="mailto:support@school.com">support@school.com</a></p>
+      <p>&copy; 2023 Kids Bright Academy. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>

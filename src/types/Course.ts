@@ -1,0 +1,242 @@
+import { z } from "zod";
+
+export interface GameDataI {
+  Id?: string;
+  Title: string;
+  Description?: string;
+  Topic?: string;
+  ImageUrl: string;
+  TutorialVideo?: string;
+  GameLevel?: number;
+  Subject?: string;
+  Prompt?: string;
+  Status: "Draft" | "Published" | "Archived";
+  StartDate?: Date;
+  EndDate?: Date;
+  Duration?: number;
+  Language?: string;
+  PassScore?: number;
+  Retakes?: number;
+  Tags?: string;
+  SingleResponse?: boolean;
+  QuestionsPerPage?: number;
+  NumberOfQuestions?: number;
+  NumberOfLevels?: number;
+  OrganizationId: string;
+  Type: string;
+  Grade?: number;
+  AgeGroup?: string;
+  TotalStudents?: number;
+  CompletedLevels?: number;
+  CourseAverageAttendance?: number;
+  GameModerator?: {
+    fullName: string;
+    Image: string | "";
+  } | null;
+  StudentsAttended?: string;
+  CompletionRate?: string;
+  AverageRating?: string;
+  TotalLikes?: string;
+}
+
+export interface GameTypeI {
+  Id: number;
+  Name: string;
+  AIGenerated: boolean;
+  Subject: string | null;
+  gameFormat: string;
+}
+
+export const gameSchema = z.object({
+  Id: z.string().optional(),
+  Title: z
+    .string({ required_error: "Title is required" })
+    .min(3, "Title must be at least 3 characters long")
+    .max(255, "Title must be at most 255 characters long"),
+  Description: z.string().optional(),
+  Instructions: z.string().optional(),
+  ImageUrl: z
+    .string({ required_error: "Image URL is required" })
+    .url("Invalid image URL format"),
+  TutorialVideo: z.string().url("Invalid video URL format").optional(),
+  GameLevel: z
+    .number({ required_error: "Grade is required" })
+    .int("Grade must be an integer")
+    .positive("Grade must be a positive number")
+    .optional(),
+  Subject: z.string().optional(),
+  Status: z.enum(["Draft", "Published", "Archived"], {
+    required_error: "Status is required",
+    invalid_type_error: "Status must be one of: Draft, Published, or Archived",
+  }),
+  StartDate: z.date().optional(),
+  EndDate: z.date().optional(),
+  Duration: z
+    .number()
+    .int("Duration must be an integer")
+    .positive("Duration must be a positive number")
+    .optional(),
+  PassScore: z
+    .number()
+    .int("Pass score must be an integer")
+    .min(0, "Pass score must be at least 0")
+    .max(100, "Pass score must be at most 100")
+    .optional(),
+  Retakes: z
+    .number()
+    .int("Number of retakes must be an integer")
+    .min(0, "Number of retakes must be at least 0")
+    .optional(),
+  Tags: z.string().optional(),
+  SingleResponse: z.boolean({
+    required_error: "Single response field is required",
+  }),
+  QuestionsPerPage: z
+    .number()
+    .int("Questions per page must be an integer")
+    .positive("Questions per page must be a positive number")
+    .optional(),
+  NumberOfQuestions: z
+    .number()
+    .int("Number of questions must be an integer")
+    .positive("Number of questions must be a positive number")
+    .optional(),
+  NumberOfLevels: z
+    .number()
+    .int("Number of levels must be an integer")
+    .positive("Number of levels must be a positive number")
+    .optional(),
+  Type: z.string({ required_error: "Course type is required" }),
+});
+
+export type GameData = z.infer<typeof gameSchema>;
+
+export interface SubjectI {
+  Id: string;
+  Name: string;
+}
+
+export interface CourseDetailsI {
+  Id: string;
+  Title: string;
+  Description: string;
+  ImageUrl: string;
+  AgeGroup: string;
+  Subject: string;
+  Status: "Draft" | "Published" | "Archived";
+  StartDate: Date | null;
+  EndDate: Date | null;
+  PreliminaryTest: boolean;
+  moderator?: {
+    Access: "Admin" | "Trainer" | "Tester";
+  };
+}
+
+export interface CourseLevelI {
+  Id: string;
+  Order: number;
+  Title: string;
+  Description: string;
+  LevelType: string;
+}
+
+export interface CourseSectionI {
+  Id?: string;
+  StudentId: string;
+  GameId: string;
+  GameType: string;
+  GameTitle: string;
+  Score: string;
+  MissedQuestions: string;
+  StartedOn: string;
+  CompletedOn: string;
+  Stars: number;
+}
+
+export const courseSectionSchema = z.object({
+  StudentId: z.string(),
+  GameId: z.string(),
+  Score: z.string(),
+  GameType: z.string(),
+  GameTitle: z.string(),
+  MissedQuestions: z.string(),
+  StartedOn: z.string(),
+  CompletedOn: z.string(),
+  Stars: z.number(),
+});
+
+// Interface for recommendation result
+export interface RecommendedCourseI {
+  id: number;
+  GameId: string;
+  title: string;
+  status?: string;
+  stars?: number;
+  maxStars?: number;
+  difficulty: string;
+  estimatedTime: string;
+  subject: string;
+  emoji: string;
+}
+
+export interface RecommendedCourseResultI {
+  GameId: string;
+  stars: number;
+}
+
+export interface MathQuestion {
+  originalQuestion: string;
+  beforeInput: string;
+  afterInput: string;
+  answer: number;
+  position: "first" | "second" | "result";
+}
+
+export type OperatorI = "<" | ">" | "=";
+
+export interface ComparisonQuestionI {
+  left: number;
+  right: number;
+  correctOperator: OperatorI;
+}
+
+export interface MultipleChoiceQuestionI {
+  question: string;
+  options: string[];
+  answer: string;
+}
+
+export interface SortingQuestionI {
+  id: number;
+  originalSentence: string;
+  words: Array<{ id: string; text: string }>;
+}
+
+export interface MatchingPairI {
+  left: string;
+  right: string;
+}
+
+export interface NumberSortingQuestionI {
+  id: number;
+  numbers: Array<number>;
+  orderType: "ascending" | "descending";
+}
+
+export interface MissingNumberQuesI {
+  id: number;
+  numbers: Array<number | null>;
+  originalNumbers: Array<number>;
+}
+
+export interface LeaderBoardI {
+  completedOn: string;
+  profilePicture: string;
+  id: string;
+  name: string;
+  score: number;
+  totalPoints: number;
+  gamesPlayed: number;
+  averageScore: number;
+  rank: number;
+}
