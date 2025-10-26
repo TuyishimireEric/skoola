@@ -129,8 +129,8 @@ export const batchUpsertPerformance = async (
             Assignment2: perf.Assignment2?.toString() || null,
             CAT: perf.CAT?.toString() || null,
             Exam: perf.Exam?.toString() || null,
-            Total: total !== null ? total.toString() : null,  // Store null if not calculated
-            Grade: grade || null,  // Store null if not calculated
+            Total: total !== null ? total.toString() : null,
+            Grade: grade || null,
             Remarks: perf.Remarks || null,
             Term: term,
             AcademicYear: academicYear,
@@ -159,9 +159,35 @@ export const updatePerformance = async (
     userId: string,
     trx: typeof db = db
 ) => {
-    // Recalculate total and grade if scores are being updated
-    const updateData: any = { ...data };
+    // Convert numeric values to strings for database storage
+    const dbData: Record<string, string | null | undefined> = {};
 
+    // Handle score fields - convert numbers to strings
+    if (data.Assignment1 !== undefined) {
+        dbData.Assignment1 = data.Assignment1 !== null ? data.Assignment1.toString() : null;
+    }
+    if (data.Assignment2 !== undefined) {
+        dbData.Assignment2 = data.Assignment2 !== null ? data.Assignment2.toString() : null;
+    }
+    if (data.CAT !== undefined) {
+        dbData.CAT = data.CAT !== null ? data.CAT.toString() : null;
+    }
+    if (data.Exam !== undefined) {
+        dbData.Exam = data.Exam !== null ? data.Exam.toString() : null;
+    }
+
+    // Handle other string fields
+    if (data.Remarks !== undefined) {
+        dbData.Remarks = data.Remarks;
+    }
+    if (data.Term !== undefined) {
+        dbData.Term = data.Term;
+    }
+    if (data.AcademicYear !== undefined) {
+        dbData.AcademicYear = data.AcademicYear;
+    }
+
+    // Recalculate total and grade if scores are being updated
     if (
         data.Assignment1 !== undefined ||
         data.Assignment2 !== undefined ||
@@ -175,14 +201,14 @@ export const updatePerformance = async (
             data.Exam
         );
 
-        updateData.Total = total !== null ? total.toString() : null;  // Store null if not calculated
-        updateData.Grade = grade || null;  // Store null if not calculated
+        dbData.Total = total !== null ? total.toString() : null;
+        dbData.Grade = grade || null;
     }
 
     const result = await trx
         .update(CoursePerformance)
         .set({
-            ...updateData,
+            ...dbData,
             UpdatedBy: userId,
             UpdatedOn: new Date().toISOString(),
         })
