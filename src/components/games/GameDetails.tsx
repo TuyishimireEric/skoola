@@ -190,13 +190,6 @@ const GameDetailsPage: React.FC<GameDetailsPageProps> = ({
     }
   };
 
-  const difficultyLevel = useMemo(() => {
-    if (!game?.NumberOfLevels) return "Easy";
-    if (game.NumberOfLevels <= 3) return "Easy";
-    if (game.NumberOfLevels <= 5) return "Medium";
-    return "Hard";
-  }, [game?.NumberOfLevels]);
-
   // Loading state
   if (isLoading) {
     return (

@@ -9,7 +9,7 @@ import { bulkPerformanceSchema } from "@/types/Course";
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { searchParams } = new URL(req.url);
@@ -29,8 +29,10 @@ export async function GET(
             );
         }
 
+        const { id } = await params;
+
         const performances = await getCoursePerformances(
-            params.id,
+            id,
             term,
             academicYear
         );
@@ -55,7 +57,7 @@ export async function GET(
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId, userRoleId, organizationId } = await getUserToken(req);
@@ -83,10 +85,11 @@ export async function POST(
         }
 
         const formData = await req.json();
+        const { id } = await params;
 
         const validationResult = bulkPerformanceSchema.safeParse({
             ...formData,
-            CourseId: params.id,
+            CourseId: id,
         });
 
         if (!validationResult.success) {
@@ -105,7 +108,7 @@ export async function POST(
         const { Term, AcademicYear, Performances } = validationResult.data;
 
         const result = await batchUpsertPerformance(
-            params.id,
+            id,
             Term,
             AcademicYear,
             Performances,
