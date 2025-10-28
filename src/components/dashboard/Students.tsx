@@ -20,6 +20,7 @@ import {
 import { useStudents } from "@/hooks/user/useStudents";
 import { StudentListResponse } from "@/server/queries/students";
 import { AddStudents } from "../users/AddStudents";
+import Link from "next/link";
 
 type ViewMode = "grid" | "list";
 type FilterStatus = "all" | "excellent" | "good" | "warning" | "critical";
@@ -510,10 +511,10 @@ const StudentsPage: React.FC = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all">
+                      <Link href={`/students/${student.id}`} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all">
                         View Profile
                         <ChevronRight className="w-3 h-3" />
-                      </button>
+                      </Link>
                       <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                         <Mail className="w-4 h-4 text-gray-600" />
                       </button>
@@ -640,9 +641,9 @@ const StudentsPage: React.FC = () => {
                               <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                                 <Mail className="w-4 h-4 text-gray-600" />
                               </button>
-                              <button className="px-3 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors">
+                              <Link href={`/students/${student.id}`} className="px-3 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors">
                                 View
-                              </button>
+                              </Link>
                             </div>
                           </td>
                         </tr>
