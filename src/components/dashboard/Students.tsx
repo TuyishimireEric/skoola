@@ -31,10 +31,17 @@ const StudentsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(20);
-  const [sortBy, setSortBy] = useState<string>("name");
-  const [sortOrder, setSortOrder] = useState<string>("asc");
-  const [activeOnly, setActiveOnly] = useState<boolean>(false);
+
+  // const [pageSize, setPageSize] = useState<number>(20);
+  // const [sortBy, setSortBy] = useState<string>("name");
+  // const [sortOrder, setSortOrder] = useState<string>("asc");
+  // const [activeOnly, setActiveOnly] = useState<boolean>(false);
+
+  const pageSize = 20;
+  const sortBy = "name";
+  const sortOrder = "asc";
+  const activeOnly = false;
+
   const [addStudent, setAddStudent] = useState<boolean>(false);
   const grade =
     selectedGrade === "all" ? "" : selectedGrade.replace("Grade ", "");
@@ -86,15 +93,52 @@ const StudentsPage: React.FC = () => {
   };
 
   const getAttendance = (student: StudentListResponse) => {
-    return student.currentStreak > 0
-      ? Math.min(95, 70 + student.currentStreak * 5)
-      : 75;
+    return student.attendanceRate || 0;
   };
 
   const getDropoutRisk = (student: StudentListResponse) => {
-    return student.averageScore > 0
-      ? Math.max(0, 100 - student.averageScore)
-      : 30;
+    const attendance = student.attendanceRate || 0;
+    const performance = student.performanceScore || 0;
+
+    // Calculate risk score: 60% attendance + 40% performance
+    const healthScore = (attendance * 0.6) + (performance * 0.4);
+
+    // Invert to get risk (higher health score = lower risk)
+    const riskScore = Math.max(0, 100 - healthScore);
+
+    return Math.round(riskScore);
+  };
+
+  const getRiskLevel = (riskScore: number): {
+    level: string;
+    color: string;
+    textColor: string;
+  } => {
+    if (riskScore >= 70) {
+      return {
+        level: 'Critical',
+        color: 'bg-red-500',
+        textColor: 'text-red-600'
+      };
+    } else if (riskScore >= 50) {
+      return {
+        level: 'High',
+        color: 'bg-orange-500',
+        textColor: 'text-orange-600'
+      };
+    } else if (riskScore >= 30) {
+      return {
+        level: 'Medium',
+        color: 'bg-yellow-500',
+        textColor: 'text-yellow-600'
+      };
+    } else {
+      return {
+        level: 'Low',
+        color: 'bg-green-500',
+        textColor: 'text-green-600'
+      };
+    }
   };
 
   const grades = [
@@ -153,19 +197,23 @@ const StudentsPage: React.FC = () => {
   };
 
   const stats = useMemo(() => {
-    const attendances = filteredStudents.map(s => getAttendance(s));
+    const attendances = filteredStudents.map(s => s.attendanceRate || 0);
     const avgAttendance = attendances.length > 0
       ? Math.round(attendances.reduce((acc, val) => acc + val, 0) / attendances.length)
       : 0;
 
     const avgGrade = filteredStudents.length > 0
       ? Math.round(
-        filteredStudents.reduce((acc, s) => acc + (s.averageScore || 0), 0) /
+        filteredStudents.reduce((acc, s) => acc + (s.performanceScore || 0), 0) /
         filteredStudents.length
       )
       : 0;
 
-    const atRisk = filteredStudents.filter((s) => getDropoutRisk(s) > 50).length;
+    // Use new risk calculation: risk >= 50 (meaning health score <= 50)
+    const atRisk = filteredStudents.filter((s) => {
+      const riskScore = getDropoutRisk(s);
+      return riskScore >= 50; // High or Critical risk
+    }).length;
 
     return {
       total: filteredStudents.length,
@@ -384,7 +432,7 @@ const StudentsPage: React.FC = () => {
           {!isLoading && viewMode === "grid" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-w-full">
               {filteredStudents.map((student) => {
-                const studentStatus = getStatusFromScore(student.averageScore || 0);
+                const studentStatus = getStatusFromScore(student.performanceScore || 0);
                 const attendance = getAttendance(student);
                 const dropoutRisk = getDropoutRisk(student);
                 const displayAvatar = student.avatar || getInitials(student.fullName);
@@ -441,9 +489,9 @@ const StudentsPage: React.FC = () => {
                         </p>
                       </div>
                       <div className="text-center p-2 bg-gray-50 rounded-lg">
-                        <p className="text-xs text-gray-600 mb-1">Grade Avg</p>
+                        <p className="text-xs text-gray-600 mb-1">Performance</p>
                         <p className="text-sm font-bold text-gray-900">
-                          {student.averageScore || 0}%
+                          {student.performanceScore || 0}%
                         </p>
                       </div>
                       <div className="text-center p-2 bg-gray-50 rounded-lg">
@@ -459,18 +507,6 @@ const StudentsPage: React.FC = () => {
                           {dropoutRisk}%
                         </p>
                       </div>
-                    </div>
-
-                    <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-600 mb-1">Recent Activity</p>
-                      <p className="text-xs font-medium text-gray-900">
-                        {student.totalCourses > 0
-                          ? `Enrolled in ${student.totalCourses} course${student.totalCourses !== 1 ? 's' : ''}`
-                          : "No recent activity"}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {getTimeAgo(student.lastActivity)}
-                      </p>
                     </div>
 
                     <div className="flex gap-2">
@@ -508,13 +544,10 @@ const StudentsPage: React.FC = () => {
                         Attendance
                       </th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                        Grade Avg
+                        Performance
                       </th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-700">
                         Risk Level
-                      </th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                        Last Active
                       </th>
                       <th className="text-left p-4 text-xs font-semibold text-gray-700">
                         Actions
@@ -523,7 +556,7 @@ const StudentsPage: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredStudents.map((student) => {
-                      const studentStatus = getStatusFromScore(student.averageScore || 0);
+                      const studentStatus = getStatusFromScore(student.performanceScore || 0);
                       const attendance = getAttendance(student);
                       const dropoutRisk = getDropoutRisk(student);
                       const displayAvatar = student.avatar || getInitials(student.fullName);
@@ -588,7 +621,7 @@ const StudentsPage: React.FC = () => {
                             </div>
                           </td>
                           <td className="p-4 text-sm font-semibold text-gray-900">
-                            {student.averageScore || 0}%
+                            {student.performanceScore || 0}%
                           </td>
                           <td className="p-4">
                             <span
@@ -601,9 +634,6 @@ const StudentsPage: React.FC = () => {
                             >
                               {dropoutRisk}%
                             </span>
-                          </td>
-                          <td className="p-4 text-sm text-gray-600">
-                            {getTimeAgo(student.lastActivity)}
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">

@@ -161,12 +161,6 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    console.log("================================");
-
-    console.log("Student Records to Process:", studentRecords);
-
-    console.log("================================");
-
     // Check for existing students based on fullName and parentEmail combination
     const existingStudentsQuery =
       studentsArray.length > 0
