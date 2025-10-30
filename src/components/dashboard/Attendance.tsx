@@ -17,6 +17,7 @@ import {
 
 import { useStudents } from "@/hooks/user/useStudents";
 import { useAttendance } from "@/hooks/attendance/useAttendance";
+import showToast from "@/utils/showToast";
 
 type AttendanceStatus = "present" | "late" | "absent" | "excused" | null;
 
@@ -41,11 +42,11 @@ const AttendancePage: React.FC = () => {
     const previousDateRef = useRef<string>(selectedDate);
     const isInitialMount = useRef(true);
 
-    const [page, setPage] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(100);
-    const [sortBy, setSortBy] = useState<string>("name");
-    const [sortOrder, setSortOrder] = useState<string>("asc");
-    const [activeOnly, setActiveOnly] = useState<boolean>(true);
+    const page = 1;
+    const pageSize = 100;
+    const sortBy = "name";
+    const sortOrder = "asc";
+    const activeOnly = true;
     const grade = selectedGrade === "all" ? "" : selectedGrade.replace("Grade ", "");
 
     // Fetch students
@@ -83,7 +84,6 @@ const AttendancePage: React.FC = () => {
 
     const students = studentsData?.students || [];
     const existingAttendance = attendanceData?.data?.attendance || [];
-    const attendanceStats = attendanceData?.data?.stats;
 
     const grades = [
         "all",
@@ -307,12 +307,12 @@ const AttendancePage: React.FC = () => {
     // Save attendance to database
     const handleSaveAttendance = async () => {
         if (!canEditDate) {
-            alert("Cannot save attendance for future dates");
+            showToast("Cannot save attendance for future dates", "error");
             return;
         }
 
         if (stats.unmarked === stats.total) {
-            alert("Please mark attendance for at least one student");
+            showToast("Please mark attendance for at least one student", "error");
             return;
         }
 
@@ -344,14 +344,19 @@ const AttendancePage: React.FC = () => {
                 throw new Error(result.message || "Failed to save attendance");
             }
 
-            alert(result.message || "Attendance saved successfully!");
+            showToast("Attendance saved successfully!", "success");
             setHasUnsavedChanges(false);
 
             // Refresh attendance data
             await refetchAttendance();
         } catch (error) {
             console.error("Error saving attendance:", error);
-            alert(error instanceof Error ? error.message : "Failed to save attendance. Please try again.");
+            showToast(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to save attendance. Please try again.",
+                "error"
+            );
         } finally {
             setIsSaving(false);
         }

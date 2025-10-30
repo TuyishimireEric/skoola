@@ -22,6 +22,7 @@ import Link from "next/link";
 import { useStudents } from "@/hooks/user/useStudents";
 import { useQuery } from "@tanstack/react-query";
 import { CoursePerformanceDataI } from "@/types/Course";
+import showToast from "@/utils/showToast";
 
 interface PerformanceRecord {
     studentId: string;
@@ -101,7 +102,7 @@ const ManagePerformancePage: React.FC = () => {
         sort: sortBy,
         order: sortOrder,
         activeOnly,
-        grade: "",
+        grade: course?.Grade || "",
     });
 
     // Fetch existing performance
@@ -517,7 +518,7 @@ const ManagePerformancePage: React.FC = () => {
                 throw new Error(result.message || "Failed to save performance");
             }
 
-            alert(result.message || "Performance saved successfully!");
+            showToast("Performance saved successfully!", "success");
             setHasUnsavedChanges(false);
 
             // Mark data as not loaded to trigger refresh
@@ -526,11 +527,12 @@ const ManagePerformancePage: React.FC = () => {
             // Refresh performance data
             await refetchPerformance();
         } catch (error) {
-            console.error("Error saving performance:", error);
-            alert(
+
+            showToast(
                 error instanceof Error
                     ? error.message
-                    : "Failed to save performance. Please try again."
+                    : "Failed to save performance. Please try again.",
+                "error"
             );
         } finally {
             setIsSaving(false);
