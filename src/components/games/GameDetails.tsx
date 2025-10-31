@@ -173,6 +173,12 @@ const GameDetailsPage: React.FC<GameDetailsPageProps> = ({
     }
   };
 
+  const handlePerformance = () => {
+    if (game?.Id) {
+      router.push(`/courses/${game.Id}/performance`);
+    }
+  };
+
   const handleEditGame = () => {
     if (game) {
       setEditGame(game);
@@ -275,8 +281,8 @@ const GameDetailsPage: React.FC<GameDetailsPageProps> = ({
               <Breadcrumb game={game} />
 
               <div className="flex items-center gap-3">
-                <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl border-2 border-purple-300">
-                  <span className="text-purple-700 font-bold">Student Performance</span>
+                <div className="bg-white/90 hover:bg-blue-100 cursor-pointer backdrop-blur-sm px-4 py-2 rounded-xl border-2 border-purple-300">
+                  <span onClick={handlePerformance} className="text-purple-700 font-bold ">Student Performance</span>
                 </div>
                 <button
                   onClick={handleEditGame}
@@ -447,7 +453,7 @@ const GameDetailsPage: React.FC<GameDetailsPageProps> = ({
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={handlePlayGame}
+                  onClick={handlePerformance}
                   className={`w-full py-4 px-8 rounded-3xl font-bold text-xl shadow-2xl transition-all duration-300 flex items-center justify-center gap-3 border-4 border-white focus:ring-4 ${isUserAdmin
                     ? "bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 focus:ring-blue-300"
                     : "bg-gradient-to-r from-orange-400 via-red-400 to-yellow-400 hover:from-orange-500 hover:via-red-500 hover:to-yellow-500 focus:ring-orange-300"
