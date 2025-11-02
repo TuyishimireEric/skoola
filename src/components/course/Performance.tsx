@@ -1,4 +1,3 @@
-// @/app/(dashboard)/courses/[id]/performance/manage/page.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
@@ -18,9 +17,8 @@ import {
     Download,
     ChevronDown,
 } from "lucide-react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { useStudents } from "@/hooks/user/useStudents";
 import { useQuery } from "@tanstack/react-query";
 import { CoursePerformanceDataI } from "@/types/Course";
@@ -61,8 +59,6 @@ const ManagePerformancePage: React.FC = () => {
         searchParams.get("year") || "2024/2025"
     );
 
-    // Refs for tracking
-    const isInitialMount = useRef(true);
     const previousTermRef = useRef<string>(selectedTerm);
     const previousYearRef = useRef<string>(selectedYear);
     const hasLoadedInitialData = useRef(false);
@@ -91,7 +87,6 @@ const ManagePerformancePage: React.FC = () => {
     });
 
     const course = courseData?.data;
-    const courseGrade = course?.Grade || "";
 
     // Fetch students for this grade
     const {
@@ -242,7 +237,6 @@ const ManagePerformancePage: React.FC = () => {
             .slice(0, 2);
     };
 
-    // Calculate total and grade - ONLY when ALL 4 scores are present
     const calculatePerformance = (
         assignment1: number | null,
         assignment2: number | null,
@@ -259,8 +253,9 @@ const ManagePerformancePage: React.FC = () => {
             return { total: null, grade: null };
         }
 
-        // Calculate average of all 4 scores
-        const total = (assignment1 + assignment2 + cat + exam) / 4;
+        // Weighted calculation:
+        // Assignment 1: 10%, Assignment 2: 10%, CAT: 40%, Exam: 40%
+        const total = (assignment1 * 0.1) + (assignment2 * 0.1) + (cat * 0.4) + (exam * 0.4);
 
         let grade = "F";
         if (total >= 90) grade = "A";
@@ -467,7 +462,6 @@ const ManagePerformancePage: React.FC = () => {
     }, [filteredStudents, performanceRecords]);
 
     // Save performance
-    // Update the handleSavePerformance function
     const handleSavePerformance = async () => {
         // Count students with at least one score entered
         const studentsWithScores = Array.from(performanceRecords.values()).filter(
@@ -495,10 +489,10 @@ const ManagePerformancePage: React.FC = () => {
             )
             .map((record: PerformanceRecord) => ({
                 StudentId: record.studentId,
-                Assignment1: record.assignment1,
-                Assignment2: record.assignment2,
-                CAT: record.cat,
-                Exam: record.exam,
+                Assignment1: record.assignment1 !== null ? Number(record.assignment1) : null,
+                Assignment2: record.assignment2 !== null ? Number(record.assignment2) : null,
+                CAT: record.cat !== null ? Number(record.cat) : null,
+                Exam: record.exam !== null ? Number(record.exam) : null,
                 Remarks: record.remarks || undefined,
             }));
 
@@ -938,8 +932,8 @@ const ManagePerformancePage: React.FC = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-xs text-gray-600 mb-1">Average</p>
-                                <p className="text-text-2xl font-bold text-purple-600">
-                                    {stats.avgTotal}%
+                                <p className="text-2xl font-bold text-purple-600">
+                                    {stats.avgTotal > 0 ? `${stats.avgTotal}%` : "-"}
                                 </p>
                             </div>
                             <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
@@ -1080,21 +1074,27 @@ const ManagePerformancePage: React.FC = () => {
                                         <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
                                             Assignment 1
                                             <br />
+                                            <span className="text-[10px] font-normal text-gray-500">(10%)</span>
                                         </th>
                                         <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
                                             Assignment 2
                                             <br />
+                                            <span className="text-[10px] font-normal text-gray-500">(10%)</span>
                                         </th>
                                         <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
                                             CAT
                                             <br />
+                                            <span className="text-[10px] font-normal text-gray-500">(40%)</span>
                                         </th>
                                         <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
                                             Exam
                                             <br />
+                                            <span className="text-[10px] font-normal text-gray-500">(40%)</span>
                                         </th>
                                         <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
                                             Total
+                                            <br />
+                                            <span className="text-[10px] font-normal text-gray-500">(100%)</span>
                                         </th>
                                         <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[80px]">
                                             Grade
@@ -1288,6 +1288,27 @@ const ManagePerformancePage: React.FC = () => {
                         <Award className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-blue-900">
                             <p className="font-medium mb-1">Grading System & Instructions</p>
+
+                            {/* Weighted Scoring */}
+                            <div className="mb-3 p-2 bg-white rounded border border-blue-200">
+                                <p className="font-semibold text-xs mb-1">Weighted Scoring System:</p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                    <div>
+                                        <span className="font-semibold">Assignment 1:</span> 10%
+                                    </div>
+                                    <div>
+                                        <span className="font-semibold">Assignment 2:</span> 10%
+                                    </div>
+                                    <div>
+                                        <span className="font-semibold">CAT:</span> 40%
+                                    </div>
+                                    <div>
+                                        <span className="font-semibold">Exam:</span> 40%
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Grade Ranges */}
                             <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs mb-2">
                                 <div>
                                     <span className="font-semibold">A:</span> 90-100%
@@ -1311,7 +1332,7 @@ const ManagePerformancePage: React.FC = () => {
                             <p className="mt-2 text-xs text-blue-700">
                                 <strong>Flexible Entry:</strong> You can save scores at any time, even with just one assessment entered (e.g., Assignment 1 only).
                                 <br />
-                                <strong>Grade Calculation:</strong> Total and grade will only appear when ALL 4 scores (Assignment 1, Assignment 2, CAT, and Exam) are entered.
+                                <strong>Grade Calculation:</strong> Total and grade will only appear when ALL 4 scores (Assignment 1, Assignment 2, CAT, and Exam) are entered. The total is calculated using weighted scores.
                                 <br />
                                 <strong>Valid Range:</strong> Enter values between 0-100. Use Quick Actions to fill all students with the same value.
                             </p>

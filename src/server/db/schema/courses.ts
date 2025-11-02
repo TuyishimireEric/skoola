@@ -8,7 +8,7 @@ import {
     boolean,
     numeric,
 } from "drizzle-orm/pg-core";
-import { Organization, User } from ".";
+import { Game, Organization, User } from ".";
 
 export const courseStatus = pgEnum("course_status", [
     "Draft",
@@ -51,7 +51,7 @@ export const CoursePerformance = pgTable("CoursePerformance", {
     Id: uuid("Id").defaultRandom().primaryKey().notNull(),
     CourseId: uuid("CourseId")
         .notNull()
-        .references(() => Course.Id, {
+        .references(() => Game.Id, {
             onDelete: "cascade",
             onUpdate: "cascade",
         }),

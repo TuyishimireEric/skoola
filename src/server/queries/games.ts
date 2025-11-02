@@ -119,37 +119,6 @@ export const getAdminGames = async (
     baseFilters.push(eq(Game.GameLevel, level));
   }
 
-  // Create subqueries using Drizzle
-  const gameStats = trx
-    .select({
-      GameId: StudentGame.GameId,
-      studentsAttended: countDistinct(StudentGame.StudentId).as(
-        "students_attended"
-      ),
-      completionRate: sql<number>`
-        CASE 
-          WHEN COUNT(*) = 0 THEN 0
-          ELSE ROUND((COUNT(CASE WHEN ${StudentGame.Score} >= 50 THEN 1 END)::numeric / COUNT(*)::numeric) * 100, 2)
-        END
-      `.as("completion_rate"),
-    })
-    .from(StudentGame)
-    .groupBy(StudentGame.GameId)
-    .as("game_stats");
-
-  const gameRatings = trx
-    .select({
-      GameId: GameReview.GameId,
-      avgRating: sql<number>`ROUND(AVG(${GameReview.Rating})::numeric, 2)`.as(
-        "avg_rating"
-      ),
-      totalReviews: count().as("total_reviews"),
-    })
-    .from(GameReview)
-    .where(eq(GameReview.IsApproved, true))
-    .groupBy(GameReview.GameId)
-    .as("game_ratings");
-
   // No need for separate gameModerators subquery since we'll join User directly
 
   // Main query using Drizzle
@@ -178,14 +147,9 @@ export const getAdminGames = async (
       // Stats fields
       moderatorName: User.FullName,
       moderatorImage: User.ImageUrl,
-      studentsAttended: sql<number>`COALESCE(${gameStats.studentsAttended}, 0)`,
-      completionRate: sql<number>`COALESCE(${gameStats.completionRate}, 0)`,
-      averageRating: sql<number>`COALESCE(${gameRatings.avgRating}, 0)`,
     })
     .from(Game)
     .leftJoin(User, eq(User.Id, Game.CreatedBy))
-    .leftJoin(gameStats, eq(gameStats.GameId, Game.Id))
-    .leftJoin(gameRatings, eq(gameRatings.GameId, Game.Id))
     .where(and(...baseFilters))
     .orderBy(desc(Game.CreatedOn))
     .limit(limit)
@@ -217,9 +181,6 @@ export const getAdminGames = async (
           Image: row.moderatorImage || "",
         }
       : null,
-    StudentsAttended: row.studentsAttended.toString(),
-    CompletionRate: row.completionRate.toString(),
-    AverageRating: row.averageRating.toString(),
   }));
 
   return courses as GameDataI[];

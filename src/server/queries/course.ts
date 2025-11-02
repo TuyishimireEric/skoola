@@ -15,22 +15,29 @@ interface CourseQueryParams {
     isActive?: boolean;
 }
 
-// Helper function to calculate total and grade
 export const calculatePerformance = (
     assignment1?: number | null,
     assignment2?: number | null,
     cat?: number | null,
     exam?: number | null
-): { total: number; grade: string } => {
-    const scores = [assignment1, assignment2, cat, exam].filter(
-        (score) => score !== null && score !== undefined
-    ) as number[];
-
-    if (scores.length === 0) {
-        return { total: 0, grade: "N/A" };
+): { total: number | null; grade: string | null } => {
+    // Only calculate if ALL four scores are present and not null
+    if (
+        assignment1 === null ||
+        assignment1 === undefined ||
+        assignment2 === null ||
+        assignment2 === undefined ||
+        cat === null ||
+        cat === undefined ||
+        exam === null ||
+        exam === undefined
+    ) {
+        return { total: null, grade: null };
     }
 
-    const total = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    // Weighted calculation:
+    // Assignment 1: 10%, Assignment 2: 10%, CAT: 40%, Exam: 40%
+    const total = (assignment1 * 0.1) + (assignment2 * 0.1) + (cat * 0.4) + (exam * 0.4);
 
     let grade = "F";
     if (total >= 90) grade = "A";
@@ -89,12 +96,31 @@ export const getCourses = async (
 
     const total = totalResult[0]?.count || 0;
 
-    // Get courses with performance stats
+    // Get courses with performance stats - only count records with all 4 scores
+    // Get courses with performance stats - only count records with all 4 scores
     const performanceStats = trx
         .select({
             CourseId: CoursePerformance.CourseId,
             studentCount: countDistinct(CoursePerformance.StudentId).as("student_count"),
-            avgPerformance: sql<number>`ROUND(AVG(${CoursePerformance.Total})::numeric, 2)`.as("avg_performance"),
+            avgPerformance: sql<number>`
+            ROUND(
+                AVG(
+                    CASE 
+                        WHEN ${CoursePerformance.Assignment1} IS NOT NULL 
+                        AND ${CoursePerformance.Assignment2} IS NOT NULL 
+                        AND ${CoursePerformance.CAT} IS NOT NULL 
+                        AND ${CoursePerformance.Exam} IS NOT NULL 
+                        THEN (
+                            (${CoursePerformance.Assignment1}::numeric * 0.1) + 
+                            (${CoursePerformance.Assignment2}::numeric * 0.1) + 
+                            (${CoursePerformance.CAT}::numeric * 0.4) + 
+                            (${CoursePerformance.Exam}::numeric * 0.4)
+                        )
+                        ELSE NULL
+                    END
+                ), 2
+            )
+        `.as("avg_performance"),
         })
         .from(CoursePerformance)
         .groupBy(CoursePerformance.CourseId)
@@ -158,7 +184,20 @@ export const getCourseById = async (
         .select({
             CourseId: CoursePerformance.CourseId,
             studentCount: countDistinct(CoursePerformance.StudentId).as("student_count"),
-            avgPerformance: sql<number>`ROUND(AVG(${CoursePerformance.Total})::numeric, 2)`.as("avg_performance"),
+            avgPerformance: sql<number>`
+                ROUND(
+                    AVG(
+                        CASE 
+                            WHEN ${CoursePerformance.Assignment1} IS NOT NULL 
+                            AND ${CoursePerformance.Assignment2} IS NOT NULL 
+                            AND ${CoursePerformance.CAT} IS NOT NULL 
+                            AND ${CoursePerformance.Exam} IS NOT NULL 
+                            THEN ${CoursePerformance.Total}::numeric
+                            ELSE NULL
+                        END
+                    ), 2
+                )
+            `.as("avg_performance"),
         })
         .from(CoursePerformance)
         .where(eq(CoursePerformance.CourseId, id))
@@ -412,8 +451,8 @@ export const batchUpsertPerformance = async (
             Assignment2: perf.Assignment2?.toString() || null,
             CAT: perf.CAT?.toString() || null,
             Exam: perf.Exam?.toString() || null,
-            Total: total.toString(),
-            Grade: grade,
+            Total: total !== null ? total.toString() : null,  // Store null if not calculated
+            Grade: grade || null,  // Store null if not calculated
             Remarks: perf.Remarks || null,
             Term: term,
             AcademicYear: academicYear,
@@ -458,8 +497,8 @@ export const updatePerformance = async (
             data.Exam
         );
 
-        updateData.Total = total.toString();
-        updateData.Grade = grade;
+        updateData.Total = total !== null ? total.toString() : null;  // Store null if not calculated
+        updateData.Grade = grade || null;  // Store null if not calculated
     }
 
     const result = await trx
