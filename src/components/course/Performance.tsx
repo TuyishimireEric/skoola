@@ -1,9 +1,3 @@
-
-
-
-
-
-
 // @/app/(dashboard)/courses/[id]/performance/manage/page.tsx
 "use client";
 
@@ -71,6 +65,7 @@ const ManagePerformancePage: React.FC = () => {
     const isInitialMount = useRef(true);
     const previousTermRef = useRef<string>(selectedTerm);
     const previousYearRef = useRef<string>(selectedYear);
+    const hasLoadedInitialData = useRef(false);
 
     const [page] = useState<number>(1);
     const [pageSize] = useState<number>(100);
@@ -144,7 +139,6 @@ const ManagePerformancePage: React.FC = () => {
         enabled: !!courseId && !!selectedTerm && !!selectedYear,
     });
 
-    // FIXED: Performance state with correct syntax
     const [performanceRecords, setPerformanceRecords] = useState<Map<string, PerformanceRecord>>(new Map());
 
     const students: Student[] = studentsData?.students || [];
@@ -187,7 +181,7 @@ const ManagePerformancePage: React.FC = () => {
         });
     }, [uniqueStudents, searchQuery]);
 
-    // Load existing performance records
+    // FIXED: Load existing performance records - REMOVED performanceRecords from dependencies
     useEffect(() => {
         const termChanged = previousTermRef.current !== selectedTerm;
         const yearChanged = previousYearRef.current !== selectedYear;
@@ -195,37 +189,19 @@ const ManagePerformancePage: React.FC = () => {
         if (termChanged || yearChanged) {
             previousTermRef.current = selectedTerm;
             previousYearRef.current = selectedYear;
+            hasLoadedInitialData.current = false;
         }
 
         if (isLoadingPerformance || isFetchingPerformance) {
             return;
         }
 
-        if (isInitialMount.current) {
-            isInitialMount.current = false;
-
-            if (existingPerformance && existingPerformance.length > 0) {
-                const newRecords = new Map<string, PerformanceRecord>();
-
-                existingPerformance.forEach((record) => {
-                    newRecords.set(record.StudentId, {
-                        studentId: record.StudentId,
-                        assignment1: record.Assignment1 ?? null,
-                        assignment2: record.Assignment2 ?? null,
-                        cat: record.CAT ?? null,
-                        exam: record.Exam ?? null,
-                        total: record.Total ?? null,
-                        grade: record.Grade ?? null,
-                        remarks: record.Remarks || "",
-                        recordId: record.Id,
-                    });
-                });
-
-                setPerformanceRecords(newRecords);
-                setHasUnsavedChanges(false);
-            }
+        // Only load data once per term/year combination
+        if (hasLoadedInitialData.current) {
             return;
         }
+
+        hasLoadedInitialData.current = true;
 
         const newRecords = new Map<string, PerformanceRecord>();
 
@@ -245,31 +221,15 @@ const ManagePerformancePage: React.FC = () => {
             });
         }
 
-        const recordsChanged =
-            newRecords.size !== performanceRecords.size ||
-            Array.from(newRecords.keys()).some((key) => {
-                const newRecord = newRecords.get(key);
-                const oldRecord = performanceRecords.get(key);
-                return (
-                    !oldRecord ||
-                    oldRecord.assignment1 !== newRecord?.assignment1 ||
-                    oldRecord.assignment2 !== newRecord?.assignment2 ||
-                    oldRecord.cat !== newRecord?.cat ||
-                    oldRecord.exam !== newRecord?.exam
-                );
-            });
-
-        if (recordsChanged) {
-            setPerformanceRecords(newRecords);
-            setHasUnsavedChanges(false);
-        }
+        setPerformanceRecords(newRecords);
+        setHasUnsavedChanges(false);
     }, [
         existingPerformance,
         selectedTerm,
         selectedYear,
         isLoadingPerformance,
         isFetchingPerformance,
-        performanceRecords,
+        // REMOVED performanceRecords from here
     ]);
 
     // Helper functions
@@ -282,22 +242,25 @@ const ManagePerformancePage: React.FC = () => {
             .slice(0, 2);
     };
 
-    // Calculate total and grade
+    // Calculate total and grade - ONLY when ALL 4 scores are present
     const calculatePerformance = (
         assignment1: number | null,
         assignment2: number | null,
         cat: number | null,
         exam: number | null
     ): { total: number | null; grade: string | null } => {
-        const scores = [assignment1, assignment2, cat, exam].filter(
-            (score): score is number => score !== null && score !== undefined
-        );
-
-        if (scores.length === 0) {
+        // Only calculate if ALL four scores are present
+        if (
+            assignment1 === null ||
+            assignment2 === null ||
+            cat === null ||
+            exam === null
+        ) {
             return { total: null, grade: null };
         }
 
-        const total = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+        // Calculate average of all 4 scores
+        const total = (assignment1 + assignment2 + cat + exam) / 4;
 
         let grade = "F";
         if (total >= 90) grade = "A";
@@ -309,65 +272,103 @@ const ManagePerformancePage: React.FC = () => {
         return { total: Math.round(total * 100) / 100, grade };
     };
 
-    // Update performance score
+    // FIXED: Simplified updateScore - no validation blocking, smooth typing
     const updateScore = (
         studentId: string,
         field: "assignment1" | "assignment2" | "cat" | "exam",
         value: string
     ) => {
-        const newRecords = new Map(performanceRecords);
-        const existing: PerformanceRecord = newRecords.get(studentId) || {
-            studentId,
-            assignment1: null,
-            assignment2: null,
-            cat: null,
-            exam: null,
-            total: null,
-            grade: null,
-            remarks: "",
-        };
+        // Convert value to number or null
+        let numValue: number | null = null;
 
-        const numValue = value === "" ? null : parseFloat(value);
+        if (value !== "") {
+            const parsed = parseFloat(value);
+            if (!isNaN(parsed)) {
+                numValue = parsed;
+            }
+        }
 
-        // Validate score is between 0 and 100
-        if (numValue !== null && (numValue < 0 || numValue > 100)) {
+        setPerformanceRecords((prevRecords) => {
+            const newRecords = new Map(prevRecords);
+            const existing: PerformanceRecord = newRecords.get(studentId) || {
+                studentId,
+                assignment1: null,
+                assignment2: null,
+                cat: null,
+                exam: null,
+                total: null,
+                grade: null,
+                remarks: "",
+            };
+
+            // Create updated record
+            const updated: PerformanceRecord = { ...existing, [field]: numValue };
+
+            // Calculate total and grade
+            const { total, grade } = calculatePerformance(
+                updated.assignment1,
+                updated.assignment2,
+                updated.cat,
+                updated.exam
+            );
+
+            updated.total = total;
+            updated.grade = grade;
+
+            newRecords.set(studentId, updated);
+            return newRecords;
+        });
+
+        setHasUnsavedChanges(true);
+    };
+
+    // FIXED: Validate input on change (prevent invalid input)
+    const handleInputChange = (
+        studentId: string,
+        field: "assignment1" | "assignment2" | "cat" | "exam",
+        value: string
+    ) => {
+        // Allow empty string
+        if (value === "") {
+            updateScore(studentId, field, value);
             return;
         }
 
-        const updated: PerformanceRecord = { ...existing, [field]: numValue };
+        // Allow numbers and one decimal point
+        const regex = /^\d*\.?\d*$/;
+        if (!regex.test(value)) {
+            return; // Don't update if invalid characters
+        }
 
-        // Calculate total and grade
-        const { total, grade } = calculatePerformance(
-            updated.assignment1,
-            updated.assignment2,
-            updated.cat,
-            updated.exam
-        );
+        // If there's a complete number, check range
+        const num = parseFloat(value);
+        if (!isNaN(num) && (num < 0 || num > 100)) {
+            return; // Don't update if out of range
+        }
 
-        updated.total = total;
-        updated.grade = grade;
-
-        newRecords.set(studentId, updated);
-        setPerformanceRecords(newRecords);
-        setHasUnsavedChanges(true);
+        updateScore(studentId, field, value);
     };
 
     // Update remarks
     const updateRemarks = (studentId: string, remarks: string) => {
-        const newRecords = new Map(performanceRecords);
-        const existing: PerformanceRecord = newRecords.get(studentId) || {
-            studentId,
-            assignment1: null,
-            assignment2: null,
-            cat: null,
-            exam: null,
-            total: null,
-            grade: null,
-            remarks: "",
-        };
+        setPerformanceRecords((prevRecords) => {
+            const newRecords = new Map(prevRecords);
+            const existing: PerformanceRecord = newRecords.get(studentId) || {
+                studentId,
+                assignment1: null,
+                assignment2: null,
+                cat: null,
+                exam: null,
+                total: null,
+                grade: null,
+                remarks: "",
+            };
 
-        newRecords.set(studentId, { ...existing, remarks });
-        setPerformanceRecords(newRecords);
+            const updated: PerformanceRecord = { ...existing, remarks };
+            newRecords.set(studentId, updated);
+            return newRecords;
+        });
+
         setHasUnsavedChanges(true);
     };
 
@@ -407,10 +408,12 @@ const ManagePerformancePage: React.FC = () => {
         }
     };
 
+    // Calculate statistics - only count complete records
     // Calculate statistics
     const stats = useMemo(() => {
         const total = filteredStudents.length;
-        let recorded = 0;
+        let recorded = 0; // Students with all 4 scores
+        let partiallyRecorded = 0; // Students with at least 1 score
         let avgTotal = 0;
         const gradeDistribution: Record<string, number> = {
             A: 0,
@@ -423,12 +426,26 @@ const ManagePerformancePage: React.FC = () => {
 
         filteredStudents.forEach((student) => {
             const performance = getPerformance(student.id);
-            if (
+
+            // Check if at least one score is present
+            const hasAnyScore =
                 performance.assignment1 !== null ||
                 performance.assignment2 !== null ||
                 performance.cat !== null ||
-                performance.exam !== null
-            ) {
+                performance.exam !== null;
+
+            if (hasAnyScore) {
+                partiallyRecorded++;
+            }
+
+            // Only count as fully recorded if ALL 4 scores are present
+            const hasAllScores =
+                performance.assignment1 !== null &&
+                performance.assignment2 !== null &&
+                performance.cat !== null &&
+                performance.exam !== null;
+
+            if (hasAllScores) {
                 recorded++;
                 if (performance.total !== null) {
                     avgTotal += performance.total;
@@ -441,16 +458,27 @@ const ManagePerformancePage: React.FC = () => {
 
         return {
             total,
-            recorded,
-            unrecorded: total - recorded,
+            recorded, // Students with all 4 scores
+            partiallyRecorded, // Students with at least 1 score
+            unrecorded: total - partiallyRecorded,
             avgTotal: recorded > 0 ? Math.round((avgTotal / recorded) * 100) / 100 : 0,
             gradeDistribution,
         };
     }, [filteredStudents, performanceRecords]);
 
     // Save performance
+    // Update the handleSavePerformance function
     const handleSavePerformance = async () => {
-        if (stats.recorded === 0) {
+        // Count students with at least one score entered
+        const studentsWithScores = Array.from(performanceRecords.values()).filter(
+            (record: PerformanceRecord) =>
+                record.assignment1 !== null ||
+                record.assignment2 !== null ||
+                record.cat !== null ||
+                record.exam !== null
+        );
+
+        if (studentsWithScores.length === 0) {
             alert("Please record performance for at least one student");
             return;
         }
@@ -498,6 +526,9 @@ const ManagePerformancePage: React.FC = () => {
             alert(result.message || "Performance saved successfully!");
             setHasUnsavedChanges(false);
 
+            // Mark data as not loaded to trigger refresh
+            hasLoadedInitialData.current = false;
+
             // Refresh performance data
             await refetchPerformance();
         } catch (error) {
@@ -523,6 +554,7 @@ const ManagePerformancePage: React.FC = () => {
                 return false;
             }
         }
+        hasLoadedInitialData.current = false;
         refetchPerformance();
         return true;
     };
@@ -583,37 +615,40 @@ const ManagePerformancePage: React.FC = () => {
         field: "assignment1" | "assignment2" | "cat" | "exam",
         value: number
     ) => {
-        const newRecords = new Map(performanceRecords);
+        setPerformanceRecords((prevRecords) => {
+            const newRecords = new Map(prevRecords);
 
-        filteredStudents.forEach((student) => {
-            const existing: PerformanceRecord = newRecords.get(student.id) || {
-                studentId: student.id,
-                assignment1: null,
-                assignment2: null,
-                cat: null,
-                exam: null,
-                total: null,
-                grade: null,
-                remarks: "",
-            };
+            filteredStudents.forEach((student) => {
+                const existing: PerformanceRecord = newRecords.get(student.id) || {
+                    studentId: student.id,
+                    assignment1: null,
+                    assignment2: null,
+                    cat: null,
+                    exam: null,
+                    total: null,
+                    grade: null,
+                    remarks: "",
+                };
 
-            const updated: PerformanceRecord = { ...existing, [field]: value };
+                const updated: PerformanceRecord = { ...existing, [field]: value };
 
-            // Calculate total and grade
-            const { total, grade } = calculatePerformance(
-                updated.assignment1,
-                updated.assignment2,
-                updated.cat,
-                updated.exam
-            );
+                // Calculate total and grade
+                const { total, grade } = calculatePerformance(
+                    updated.assignment1,
+                    updated.assignment2,
+                    updated.cat,
+                    updated.exam
+                );
 
-            updated.total = total;
-            updated.grade = grade;
+                updated.total = total;
+                updated.grade = grade;
 
-            newRecords.set(student.id, updated);
+                newRecords.set(student.id, updated);
+            });
+
+            return newRecords;
         });
 
-        setPerformanceRecords(newRecords);
         setHasUnsavedChanges(true);
     };
 
@@ -728,9 +763,6 @@ const ManagePerformancePage: React.FC = () => {
         );
     };
 
-    // Rest of the component (UI) remains exactly the same...
-    // [Continue with the JSX from the previous version]
-
     if (isError) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -820,7 +852,10 @@ const ManagePerformancePage: React.FC = () => {
                             </div>
 
                             <button
-                                onClick={() => refetchPerformance()}
+                                onClick={() => {
+                                    hasLoadedInitialData.current = false;
+                                    refetchPerformance();
+                                }}
                                 disabled={isFetchingPerformance}
                                 className=" p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                                 title="Refresh"
@@ -844,7 +879,7 @@ const ManagePerformancePage: React.FC = () => {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                         <div className="flex items-center justify-between">
                             <div>
@@ -860,7 +895,7 @@ const ManagePerformancePage: React.FC = () => {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs text-gray-600 mb-1">Recorded</p>
+                                <p className="text-xs text-gray-600 mb-1">Complete (4/4)</p>
                                 <p className="text-2xl font-bold text-green-600">
                                     {stats.recorded}
                                 </p>
@@ -874,13 +909,27 @@ const ManagePerformancePage: React.FC = () => {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs text-gray-600 mb-1">Unrecorded</p>
+                                <p className="text-xs text-gray-600 mb-1">In Progress</p>
+                                <p className="text-2xl font-bold text-blue-600">
+                                    {stats.partiallyRecorded - stats.recorded}
+                                </p>
+                            </div>
+                            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                                <Calculator className="w-6 h-6 text-blue-500" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs text-gray-600 mb-1">Not Started</p>
                                 <p className="text-2xl font-bold text-yellow-600">
                                     {stats.unrecorded}
                                 </p>
                             </div>
                             <div className="w-12 h-12 bg-yellow-50 rounded-lg flex items-center justify-center">
-                                <Calculator className="w-6 h-6 text-yellow-500" />
+                                <AlertTriangle className="w-6 h-6 text-yellow-500" />
                             </div>
                         </div>
                     </div>
@@ -962,7 +1011,7 @@ const ManagePerformancePage: React.FC = () => {
                             <button
                                 onClick={handleSavePerformance}
                                 disabled={
-                                    isSaving || stats.recorded === 0 || !hasUnsavedChanges
+                                    isSaving || stats.partiallyRecorded === 0 || !hasUnsavedChanges
                                 }
                                 className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -974,7 +1023,7 @@ const ManagePerformancePage: React.FC = () => {
                                 ) : (
                                     <>
                                         <Save className="w-4 h-4" />
-                                        Save Performance
+                                        Save Performance ({stats.partiallyRecorded})
                                     </>
                                 )}
                             </button>
@@ -1021,200 +1070,193 @@ const ManagePerformancePage: React.FC = () => {
                 {/* Performance Table */}
                 {!isLoading && (
                     <div className="max-w-7xl bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full max-w-7xl">
+                                <thead className=" bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="text-left p-4 text-xs font-semibold text-gray-700 sticky left-0 bg-gray-50 z-10 min-w-[160px]">
+                                            Student Name
+                                        </th>
+                                        <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
+                                            Assignment 1
+                                            <br />
+                                        </th>
+                                        <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
+                                            Assignment 2
+                                            <br />
+                                        </th>
+                                        <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
+                                            CAT
+                                            <br />
+                                        </th>
+                                        <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
+                                            Exam
+                                            <br />
+                                        </th>
+                                        <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
+                                            Total
+                                        </th>
+                                        <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[80px]">
+                                            Grade
+                                        </th>
+                                        <th className="text-left p-4 text-xs font-semibold text-gray-700 min-w-[140px]">
+                                            Remarks
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {filteredStudents.map((student) => {
+                                        const performance = getPerformance(student.id);
+                                        const displayAvatar =
+                                            student.avatar || getInitials(student.fullName);
 
-                        <table className="w-full max-w-7xl">
-                            <thead className=" bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th className="text-left p-4 text-xs font-semibold text-gray-700 sticky left-0 bg-gray-50 z-10 min-w-[160px]">
-                                        Student Name
-                                    </th>
-                                    <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
-                                        Assignment 1
-                                        <br />
-                                    </th>
-                                    <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
-                                        Assignment 2
-                                        <br />
-                                    </th>
-                                    <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
-                                        CAT
-                                        <br />
-                                    </th>
-                                    <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
-                                        Exam
-                                        <br />
-                                    </th>
-                                    <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[100px]">
-                                        Total
-                                    </th>
-                                    <th className="text-center p-4 text-xs font-semibold text-gray-700 min-w-[80px]">
-                                        Grade
-                                    </th>
-                                    <th className="text-left p-4 text-xs font-semibold text-gray-700 min-w-[140px]">
-                                        Remarks
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {filteredStudents.map((student) => {
-                                    const performance = getPerformance(student.id);
-                                    const displayAvatar =
-                                        student.avatar || getInitials(student.fullName);
-
-                                    return (
-                                        <tr
-                                            key={student.id}
-                                            className="hover:bg-gray-50 transition-colors"
-                                        >
-                                            <td className="p-4 sticky left-0 bg-white z-10">
-                                                <div className="flex items-center gap-3">
-                                                    {student.avatar ? (
-                                                        <img
-                                                            src={student.avatar}
-                                                            alt={student.fullName}
-                                                            className="w-10 h-10 rounded-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
-                                                            {displayAvatar}
+                                        return (
+                                            <tr
+                                                key={student.id}
+                                                className="hover:bg-gray-50 transition-colors"
+                                            >
+                                                <td className="p-4 sticky left-0 bg-white z-10">
+                                                    <div className="flex items-center gap-3">
+                                                        {student.avatar ? (
+                                                            <img
+                                                                src={student.avatar}
+                                                                alt={student.fullName}
+                                                                className="w-10 h-10 rounded-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+                                                                {displayAvatar}
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <p className="font-semibold text-sm text-gray-900">
+                                                                {student.fullName}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {student.grade || "No Grade"}
+                                                            </p>
                                                         </div>
-                                                    )}
-                                                    <div>
-                                                        <p className="font-semibold text-sm text-gray-900">
-                                                            {student.fullName}
-                                                        </p>
-                                                        <p className="text-xs text-gray-500">
-                                                            {student.grade || "No Grade"}
-                                                        </p>
                                                     </div>
-                                                </div>
-                                            </td>
+                                                </td>
 
-                                            {/* Assignment 1 */}
-                                            <td className="p-4">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    step="0.01"
-                                                    value={
-                                                        performance.assignment1 !== null
-                                                            ? performance.assignment1
-                                                            : ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        updateScore(
-                                                            student.id,
-                                                            "assignment1",
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    placeholder="0-100"
-                                                    className="w-full px-2 py-2 border border-gray-300 rounded-lg text-xs text-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                                />
-                                            </td>
+                                                {/* Assignment 1 */}
+                                                <td className="p-2">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        value={
+                                                            performance.assignment1 !== null
+                                                                ? performance.assignment1
+                                                                : ""
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleInputChange(
+                                                                student.id,
+                                                                "assignment1",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        placeholder="0-100"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent hover:border-gray-400"
+                                                    />
+                                                </td>
 
-                                            {/* Assignment 2 */}
-                                            <td className="p-4">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    step="0.01"
-                                                    value={
-                                                        performance.assignment2 !== null
-                                                            ? performance.assignment2
-                                                            : ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        updateScore(
-                                                            student.id,
-                                                            "assignment2",
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    placeholder="0-100"
-                                                    className="w-full px-2 py-2 border border-gray-300 rounded-lg text-xs text-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                                />
-                                            </td>
+                                                {/* Assignment 2 */}
+                                                <td className="p-2">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        value={
+                                                            performance.assignment2 !== null
+                                                                ? performance.assignment2
+                                                                : ""
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleInputChange(
+                                                                student.id,
+                                                                "assignment2",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        placeholder="0-100"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent hover:border-gray-400"
+                                                    />
+                                                </td>
 
-                                            {/* CAT */}
-                                            <td className="p-4">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    step="0.01"
-                                                    value={
-                                                        performance.cat !== null ? performance.cat : ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        updateScore(student.id, "cat", e.target.value)
-                                                    }
-                                                    placeholder="0-100"
-                                                    className="w-full px-2 py-2 border border-gray-300 rounded-lg text-xs text-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                                />
-                                            </td>
+                                                {/* CAT */}
+                                                <td className="p-2">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        value={
+                                                            performance.cat !== null ? performance.cat : ""
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleInputChange(student.id, "cat", e.target.value)
+                                                        }
+                                                        placeholder="0-100"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent hover:border-gray-400"
+                                                    />
+                                                </td>
 
-                                            {/* Exam */}
-                                            <td className="p-4">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    step="0.01"
-                                                    value={
-                                                        performance.exam !== null ? performance.exam : ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        updateScore(student.id, "exam", e.target.value)
-                                                    }
-                                                    placeholder="0-100"
-                                                    className="w-full px-2 py-2 border border-gray-300 rounded-lg text-xs text-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                                />
-                                            </td>
+                                                {/* Exam */}
+                                                <td className="p-2">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        value={
+                                                            performance.exam !== null ? performance.exam : ""
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleInputChange(student.id, "exam", e.target.value)
+                                                        }
+                                                        placeholder="0-100"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent hover:border-gray-400"
+                                                    />
+                                                </td>
 
-                                            {/* Total */}
-                                            <td className="p-4 text-center">
-                                                <span className="text-sm font-semibold text-gray-900">
-                                                    {performance.total !== null
-                                                        ? `${performance.total}%`
-                                                        : "-"}
-                                                </span>
-                                            </td>
-
-                                            {/* Grade */}
-                                            <td className="p-4 text-center">
-                                                {performance.grade ? (
-                                                    <span
-                                                        className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${getGradeColor(
-                                                            performance.grade
-                                                        )}`}
-                                                    >
-                                                        {performance.grade}
+                                                {/* Total */}
+                                                <td className="p-2 text-center">
+                                                    <span className="text-sm font-semibold text-gray-900">
+                                                        {performance.total !== null
+                                                            ? `${performance.total}%`
+                                                            : "-"}
                                                     </span>
-                                                ) : (
-                                                    <span className="text-sm text-gray-400">-</span>
-                                                )}
-                                            </td>
+                                                </td>
 
-                                            {/* Remarks */}
-                                            <td className="p-4">
-                                                <input
-                                                    type="text"
-                                                    value={performance.remarks}
-                                                    onChange={(e) =>
-                                                        updateRemarks(student.id, e.target.value)
-                                                    }
-                                                    placeholder="Add remarks..."
-                                                    className="w-full px-2 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                                />
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                                {/* Grade */}
+                                                <td className="p-2 text-center">
+                                                    {performance.grade ? (
+                                                        <span
+                                                            className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${getGradeColor(
+                                                                performance.grade
+                                                            )}`}
+                                                        >
+                                                            {performance.grade}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-400">-</span>
+                                                    )}
+                                                </td>
+
+                                                {/* Remarks */}
+                                                <td className="p-2">
+                                                    <input
+                                                        type="text"
+                                                        value={performance.remarks}
+                                                        onChange={(e) =>
+                                                            updateRemarks(student.id, e.target.value)
+                                                        }
+                                                        placeholder="Add remarks..."
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent hover:border-gray-400"
+                                                    />
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
 
@@ -1245,8 +1287,8 @@ const ManagePerformancePage: React.FC = () => {
                     <div className="flex items-start gap-3">
                         <Award className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-blue-900">
-                            <p className="font-medium mb-1">Grading System</p>
-                            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs">
+                            <p className="font-medium mb-1">Grading System & Instructions</p>
+                            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs mb-2">
                                 <div>
                                     <span className="font-semibold">A:</span> 90-100%
                                 </div>
@@ -1267,9 +1309,11 @@ const ManagePerformancePage: React.FC = () => {
                                 </div>
                             </div>
                             <p className="mt-2 text-xs text-blue-700">
-                                Total is calculated as the average of all entered scores. You
-                                can enter any combination of scores. Use Quick Actions to fill
-                                all students with the same value.
+                                <strong>Flexible Entry:</strong> You can save scores at any time, even with just one assessment entered (e.g., Assignment 1 only).
+                                <br />
+                                <strong>Grade Calculation:</strong> Total and grade will only appear when ALL 4 scores (Assignment 1, Assignment 2, CAT, and Exam) are entered.
+                                <br />
+                                <strong>Valid Range:</strong> Enter values between 0-100. Use Quick Actions to fill all students with the same value.
                             </p>
                         </div>
                     </div>
