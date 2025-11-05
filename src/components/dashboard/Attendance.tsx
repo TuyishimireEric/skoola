@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+// AttendancePage.tsx
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
     Search,
     Calendar,
@@ -11,12 +12,11 @@ import {
     Filter,
     Loader2,
     AlertTriangle,
+    RefreshCw,
 } from "lucide-react";
 
 import { useStudents } from "@/hooks/user/useStudents";
-import { StudentListResponse } from "@/server/queries/students";
-
-
+import { useAttendance } from "@/hooks/attendance/useAttendance";
 
 type AttendanceStatus = "present" | "late" | "absent" | "excused" | null;
 
@@ -25,6 +25,7 @@ interface AttendanceRecord {
     status: AttendanceStatus;
     notes: string;
     timestamp: string;
+    recordId?: string; // Track if this is an existing record
 }
 
 const AttendancePage: React.FC = () => {
@@ -34,20 +35,25 @@ const AttendancePage: React.FC = () => {
     const [selectedGrade, setSelectedGrade] = useState<string>("all");
     const [showFilters, setShowFilters] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+    // Refs for tracking
+    const previousDateRef = useRef<string>(selectedDate);
+    const isInitialMount = useRef(true);
 
     const [page, setPage] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(20);
+    const [pageSize, setPageSize] = useState<number>(100);
     const [sortBy, setSortBy] = useState<string>("name");
     const [sortOrder, setSortOrder] = useState<string>("asc");
-    const [activeOnly, setActiveOnly] = useState<boolean>(false);
-    const grade =
-        selectedGrade === "all" ? "" : selectedGrade.replace("Grade ", "");
+    const [activeOnly, setActiveOnly] = useState<boolean>(true);
+    const grade = selectedGrade === "all" ? "" : selectedGrade.replace("Grade ", "");
 
+    // Fetch students
     const {
         data: studentsData,
-        isLoading,
-        isError,
-        refetch,
+        isLoading: isLoadingStudents,
+        isError: isStudentsError,
+        refetch: refetchStudents,
     } = useStudents({
         page,
         pageSize,
@@ -58,13 +64,26 @@ const AttendancePage: React.FC = () => {
         grade,
     });
 
+    // Fetch attendance for selected date
+    const {
+        data: attendanceData,
+        isLoading: isLoadingAttendance,
+        isError: isAttendanceError,
+        refetch: refetchAttendance,
+        isFetching: isFetchingAttendance,
+    } = useAttendance({
+        date: selectedDate,
+        grade: grade,
+    });
 
-    // Attendance state - using student ID as key
+    // Attendance state
     const [attendanceRecords, setAttendanceRecords] = useState<Map<string, AttendanceRecord>>(
         new Map()
     );
 
     const students = studentsData?.students || [];
+    const existingAttendance = attendanceData?.data?.attendance || [];
+    const attendanceStats = attendanceData?.data?.stats;
 
     const grades = [
         "all",
@@ -76,17 +95,100 @@ const AttendancePage: React.FC = () => {
         "Grade 6",
     ];
 
+    // Remove duplicate students
+    const uniqueStudents = useMemo(() => {
+        if (!students || students.length === 0) return [];
+
+        const studentMap = new Map();
+
+        students.forEach((student) => {
+            if (!studentMap.has(student.id)) {
+                studentMap.set(student.id, student);
+            }
+        });
+
+        return Array.from(studentMap.values());
+    }, [students]);
+
     // Filter students
     const filteredStudents = useMemo(() => {
-        return students.filter((student) => {
-            const matchesGrade =
-                selectedGrade === "all" || student.grade === selectedGrade;
+        return uniqueStudents.filter((student) => {
             const matchesSearch = student.fullName
                 .toLowerCase()
                 .includes(searchQuery.toLowerCase());
-            return matchesGrade && matchesSearch;
+            return matchesSearch;
         });
-    }, [students, selectedGrade, searchQuery]);
+    }, [uniqueStudents, searchQuery]);
+
+    // Load existing attendance records when data changes
+    useEffect(() => {
+        // Check if date has changed
+        const dateChanged = previousDateRef.current !== selectedDate;
+
+        if (dateChanged) {
+            previousDateRef.current = selectedDate;
+        }
+
+        // Don't update during loading/fetching
+        if (isLoadingAttendance || isFetchingAttendance) {
+            return;
+        }
+
+        // Skip on initial mount to prevent unnecessary state updates
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+
+            // But still load data if exists
+            if (existingAttendance && existingAttendance.length > 0) {
+                const newRecords = new Map<string, AttendanceRecord>();
+
+                existingAttendance.forEach((record) => {
+                    newRecords.set(record.StudentId, {
+                        studentId: record.StudentId,
+                        status: record.Status,
+                        notes: record.Notes || "",
+                        timestamp: new Date().toISOString(),
+                        recordId: record.Id,
+                    });
+                });
+
+                setAttendanceRecords(newRecords);
+                setHasUnsavedChanges(false);
+            }
+            return;
+        }
+
+        // Update records based on fetched data
+        const newRecords = new Map<string, AttendanceRecord>();
+
+        if (existingAttendance && existingAttendance.length > 0) {
+            existingAttendance.forEach((record) => {
+                newRecords.set(record.StudentId, {
+                    studentId: record.StudentId,
+                    status: record.Status,
+                    notes: record.Notes || "",
+                    timestamp: new Date().toISOString(),
+                    recordId: record.Id,
+                });
+            });
+        }
+
+        // Only update if records actually changed
+        const recordsChanged =
+            newRecords.size !== attendanceRecords.size ||
+            Array.from(newRecords.keys()).some(key => {
+                const newRecord = newRecords.get(key);
+                const oldRecord = attendanceRecords.get(key);
+                return !oldRecord ||
+                    oldRecord.status !== newRecord?.status ||
+                    oldRecord.notes !== newRecord?.notes;
+            });
+
+        if (recordsChanged) {
+            setAttendanceRecords(newRecords);
+            setHasUnsavedChanges(false);
+        }
+    }, [existingAttendance, selectedDate, isLoadingAttendance, isFetchingAttendance]);
 
     // Helper functions
     const getInitials = (name: string) => {
@@ -116,9 +218,11 @@ const AttendancePage: React.FC = () => {
             status,
             notes: existing?.notes || "",
             timestamp: new Date().toISOString(),
+            recordId: existing?.recordId,
         });
 
         setAttendanceRecords(newRecords);
+        setHasUnsavedChanges(true);
     };
 
     // Update attendance notes
@@ -133,9 +237,11 @@ const AttendancePage: React.FC = () => {
             status: existing?.status || null,
             notes,
             timestamp: new Date().toISOString(),
+            recordId: existing?.recordId,
         });
 
         setAttendanceRecords(newRecords);
+        setHasUnsavedChanges(true);
     };
 
     // Get attendance status for a student
@@ -164,7 +270,7 @@ const AttendancePage: React.FC = () => {
         }
     };
 
-    // Calculate stats
+    // Calculate stats from current state
     const stats = useMemo(() => {
         const total = filteredStudents.length;
         let present = 0;
@@ -199,7 +305,6 @@ const AttendancePage: React.FC = () => {
     }, [filteredStudents, attendanceRecords]);
 
     // Save attendance to database
-    // In AttendancePage component
     const handleSaveAttendance = async () => {
         if (!canEditDate) {
             alert("Cannot save attendance for future dates");
@@ -239,10 +344,11 @@ const AttendancePage: React.FC = () => {
                 throw new Error(result.message || "Failed to save attendance");
             }
 
-            alert("Attendance saved successfully!");
+            alert(result.message || "Attendance saved successfully!");
+            setHasUnsavedChanges(false);
 
-            // Optionally refresh the data
-            // refetch();
+            // Refresh attendance data
+            await refetchAttendance();
         } catch (error) {
             console.error("Error saving attendance:", error);
             alert(error instanceof Error ? error.message : "Failed to save attendance. Please try again.");
@@ -253,6 +359,11 @@ const AttendancePage: React.FC = () => {
 
     // Navigate to previous day
     const goToPreviousDay = () => {
+        if (hasUnsavedChanges) {
+            if (!confirm("You have unsaved changes. Are you sure you want to change the date?")) {
+                return;
+            }
+        }
         const date = new Date(selectedDate);
         date.setDate(date.getDate() - 1);
         setSelectedDate(date.toISOString().split('T')[0]);
@@ -260,6 +371,11 @@ const AttendancePage: React.FC = () => {
 
     // Navigate to next day
     const goToNextDay = () => {
+        if (hasUnsavedChanges) {
+            if (!confirm("You have unsaved changes. Are you sure you want to change the date?")) {
+                return;
+            }
+        }
         const nextDate = new Date(selectedDate);
         nextDate.setDate(nextDate.getDate() + 1);
         const nextDateString = nextDate.toISOString().split('T')[0];
@@ -269,16 +385,35 @@ const AttendancePage: React.FC = () => {
         }
     };
 
+    // Handle date change from input
+    const handleDateChange = (newDate: string) => {
+        if (hasUnsavedChanges) {
+            if (!confirm("You have unsaved changes. Are you sure you want to change the date?")) {
+                return;
+            }
+        }
+        setSelectedDate(newDate);
+    };
+
+    const isLoading = isLoadingStudents || isLoadingAttendance;
+    const isError = isStudentsError || isAttendanceError;
+
     if (isError) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Failed to load students
+                        Failed to load data
                     </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                        {isStudentsError ? "Failed to load students" : "Failed to load attendance"}
+                    </p>
                     <button
-                        onClick={() => refetch()}
+                        onClick={() => {
+                            refetchStudents();
+                            refetchAttendance();
+                        }}
                         className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                     >
                         Try Again
@@ -290,16 +425,24 @@ const AttendancePage: React.FC = () => {
 
     return (
         <div className="min-h-screen">
-            <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="max-w-7xl mx-auto pr-4 py-6">
                 {/* Header */}
-                <div className="mb-3">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="mb-2">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                        <div>
+                            <p className="text-sm text-gray-600 mt-1">
+                                {existingAttendance.length > 0
+                                    ? `${existingAttendance.length} student(s) recorded`
+                                    : "No attendance recorded yet"}
+                            </p>
+                        </div>
 
                         {/* Date Navigation */}
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={goToPreviousDay}
                                 className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                title="Previous day"
                             >
                                 <ChevronLeft className="w-5 h-5 text-gray-600" />
                             </button>
@@ -310,25 +453,42 @@ const AttendancePage: React.FC = () => {
                                     type="date"
                                     value={selectedDate}
                                     max={today}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    onChange={(e) => handleDateChange(e.target.value)}
                                     className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 />
                             </div>
 
                             <button
                                 onClick={goToNextDay}
-                                disabled={isDateInFuture(new Date(selectedDate).toISOString().split('T')[0]) || selectedDate === today}
+                                disabled={selectedDate === today}
                                 className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Next day"
                             >
                                 <ChevronRight className="w-5 h-5 text-gray-600" />
+                            </button>
+
+                            <button
+                                onClick={() => refetchAttendance()}
+                                disabled={isFetchingAttendance}
+                                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                title="Refresh"
+                            >
+                                <RefreshCw className={`w-5 h-5 text-gray-600 ${isFetchingAttendance ? 'animate-spin' : ''}`} />
                             </button>
                         </div>
                     </div>
 
                     {!canEditDate && (
-                        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
+                        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
                             <AlertTriangle className="w-5 h-5" />
                             <span className="text-sm">Cannot edit attendance for future dates</span>
+                        </div>
+                    )}
+
+                    {hasUnsavedChanges && canEditDate && (
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-blue-800">
+                            <AlertTriangle className="w-5 h-5" />
+                            <span className="text-sm">You have unsaved changes. Don't forget to save!</span>
                         </div>
                     )}
                 </div>
@@ -387,11 +547,16 @@ const AttendancePage: React.FC = () => {
                             >
                                 <Filter className="w-4 h-4" />
                                 Filters
+                                {selectedGrade !== "all" && (
+                                    <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
+                                        1
+                                    </span>
+                                )}
                             </button>
 
                             <button
                                 onClick={handleSaveAttendance}
-                                disabled={isSaving || !canEditDate || stats.unmarked === stats.total}
+                                disabled={isSaving || !canEditDate || stats.unmarked === stats.total || !hasUnsavedChanges}
                                 className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSaving ? (
@@ -436,7 +601,9 @@ const AttendancePage: React.FC = () => {
                 {isLoading && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                         <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
-                        <p className="text-gray-600">Loading students...</p>
+                        <p className="text-gray-600">
+                            {isLoadingAttendance ? "Loading attendance records..." : "Loading students..."}
+                        </p>
                     </div>
                 )}
 

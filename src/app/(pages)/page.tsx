@@ -1,11 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { GraduationCap, Users, Brain, MessageSquare, TrendingUp, Bell, School, ArrowRight, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { GraduationCap, Users, Brain, MessageSquare, TrendingUp, Bell, School, ArrowRight, CheckCircle, Rocket, ChevronDown, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useClientSession } from '@/hooks/user/useClientSession';
+import ProfileImage from '@/components/dashboard/ProfileImage';
+import { UserMenuItem } from '@/components/menu/NavBar';
+import Image from 'next/image';
+import { signOut } from 'next-auth/react';
 
 const HomePage = () => {
   const [scrollY, setScrollY] = useState(0);
+  const [userMenuOpen, setUserMenuOpen] = useState<boolean>(false);
+
+  const { userRoleId, userId, userEmail, userImage, userName } =
+    useClientSession();
+
+  const userMenuItems: UserMenuItem[] = [
+    { name: "Profile", href: "/profile", icon: User },
+  ];
+
+  const handleLogout = async (): Promise<void> => {
+    await signOut({ callbackUrl: "/" });
+    setUserMenuOpen(false);
+  };
+
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -42,6 +63,10 @@ const HomePage = () => {
     { number: "AI", label: "Powered", sublabel: "Predictive Analytics" }
   ];
 
+  const toggleUserMenu = useCallback((): void => {
+    setUserMenuOpen((prev) => !prev);
+  }, []);
+
   return (
     <div className="min-h-screen w-full bg-white overflow-x-hidden">
       {/* Navigation */}
@@ -53,12 +78,281 @@ const HomePage = () => {
               SkoolaSync
             </span>
           </div>
+
           <div className="flex items-center gap-6">
             <a href="#features" className="text-gray-600 hover:text-green-600 transition-colors">Features</a>
             <a href="#how-it-works" className="text-gray-600 hover:text-green-600 transition-colors">How It Works</a>
-            <Link href="/login" className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-all hover:shadow-lg">
-              Sign In
-            </Link>
+            {userId ? (
+              // Enhanced User Profile Menu
+              <div className="relative ml-2 xl:ml-4" ref={userMenuRef}>
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={toggleUserMenu}
+                  className="flex items-center gap-2 px-3 py-2 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
+                >
+                  {/* Animated background shine */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    initial={{ x: "-100%", opacity: 0 }}
+                    animate={{
+                      x: userMenuOpen ? "100%" : "-100%",
+                      opacity: userMenuOpen ? 1 : 0,
+                    }}
+                    transition={{
+                      x: { duration: 0.6, ease: "easeInOut" },
+                      opacity: { duration: 0.3 },
+                    }}
+                  />
+
+                  <motion.div
+                    className="relative w-8 h-8"
+                    animate={
+                      userMenuOpen
+                        ? { scale: 1.1, rotate: 5 }
+                        : { scale: 1, rotate: 0 }
+                    }
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  >
+                    {userImage ? (
+                      <ProfileImage imageUrl={userImage} size="w-8 h-8" />
+                    ) : (
+                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/20">
+                        🦁
+                      </div>
+                    )}
+                    <motion.div
+                      className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                  </motion.div>
+
+                  <span className="hidden xl:block font-comic font-medium text-sm relative z-10">
+                    {userName?.split(" ")[0] || "User"}
+                  </span>
+
+                  <motion.div
+                    animate={{ rotate: userMenuOpen ? 180 : 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="relative z-10"
+                  >
+                    <ChevronDown size={16} />
+                  </motion.div>
+                </motion.button>
+
+                {/* Enhanced User Dropdown Menu */}
+                <AnimatePresence>
+                  {userMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30,
+                        duration: 0.4,
+                      }}
+                      className="absolute right-0 top-full mt-3 w-72 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-100/50 py-2 z-50 overflow-hidden"
+                    >
+                      {/* Background gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary-50/50 to-blue-50/50" />
+
+                      {/* User Info Header */}
+                      <div className="relative px-4 py-4 border-b border-primary-100/50">
+                        <motion.div
+                          className="flex items-center gap-3"
+                          initial={{ x: -10, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 0.1 }}
+                        >
+                          <motion.div
+                            className="relative w-10 h-10"
+                            whileHover={{ scale: 1.1 }}
+                          >
+                            {userImage ? (
+                              <Image
+                                src={userImage}
+                                alt={userName || "User"}
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover border-2 border-primary-200"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center border-2 border-primary-200">
+                                <User className="w-5 h-5 text-primary-600" />
+                              </div>
+                            )}
+                            <motion.div
+                              className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            />
+                          </motion.div>
+                          <div className="flex-1">
+                            <p className="font-comic font-bold text-primary-700 text-sm">
+                              {userName || "User"}
+                            </p>
+                            <p className="text-xs text-primary-500 truncate">
+                              {userEmail}
+                            </p>
+                          </div>
+                        </motion.div>
+                      </div>
+
+                      {/* Menu Items */}
+                      <div className="relative py-2">
+                        {userMenuItems.map((item, index) => (
+                          <motion.div
+                            key={item.name}
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.15 + index * 0.05 }}
+                          >
+                            <Link
+                              href={item.href}
+                              onClick={() => setUserMenuOpen(false)}
+                              className="flex items-center gap-3 px-4 py-3 text-sm font-comic font-medium text-primary-700 hover:bg-primary-100/50 hover:text-primary-600 transition-all duration-300 group relative overflow-hidden"
+                            >
+                              <motion.div
+                                whileHover={{ scale: 1.2, rotate: 5 }}
+                                transition={{ type: "spring", stiffness: 400 }}
+                              >
+                                <item.icon
+                                  size={18}
+                                  className="text-primary-400 group-hover:text-primary-600 transition-colors"
+                                />
+                              </motion.div>
+                              <span className="relative z-10">{item.name}</span>
+
+                              {/* Hover effect */}
+                              <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-primary-100/0 via-primary-100/30 to-primary-100/0"
+                                initial={{ x: "-100%" }}
+                                whileHover={{ x: "100%" }}
+                                transition={{ duration: 0.6 }}
+                              />
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      {/* Logout */}
+                      <div className="relative border-t border-primary-100/50 pt-2">
+                        <motion.button
+                          onClick={handleLogout}
+                          className="flex items-center gap-3 w-full px-4 py-3 text-sm font-comic font-medium text-red-600 hover:bg-red-50/50 transition-all duration-300 group relative overflow-hidden"
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 0.3 }}
+                          whileHover={{ x: 2 }}
+                        >
+                          <motion.div
+                            whileHover={{ scale: 1.2, rotate: -5 }}
+                            transition={{ type: "spring", stiffness: 400 }}
+                          >
+                            <LogOut size={18} />
+                          </motion.div>
+                          <span className="relative z-10">Sign Out</span>
+
+                          {/* Hover effect */}
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-red-50/0 via-red-50/50 to-red-50/0"
+                            initial={{ x: "-100%" }}
+                            whileHover={{ x: "100%" }}
+                            transition={{ duration: 0.6 }}
+                          />
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              // Enhanced Get Started Button
+              <motion.div
+                whileHover={{ scale: 1.05, y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                className="ml-2 "
+              >
+                <Link
+                  href="/login"
+                  className="group relative inline-flex items-center gap-2 px-6  py-2 overflow-hidden rounded-full font-comic font-bold text-sm transition-all duration-500"
+                >
+                  {/* Multi-layer animated background */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600"
+                    animate={{
+                      backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    style={{ backgroundSize: "200% 100%" }}
+                  />
+
+                  {/* Shimmer effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12"
+                    animate={{ x: ["-200%", "200%"] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 1,
+                      ease: "easeInOut",
+                    }}
+                  />
+
+                  {/* Pulsing glow */}
+                  <motion.div
+                    className="absolute inset-0 rounded-full bg-primary-400/30 blur-xl"
+                    animate={{
+                      scale: [1, 1.2, 1],
+                      opacity: [0.3, 0.6, 0.3],
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+
+                  {/* Content */}
+                  <span className="relative z-10 flex items-center gap-2 text-white">
+                    <motion.div
+                      animate={{
+                        rotate: [0, 15, -15, 0],
+                        scale: [1, 1.1, 1],
+                      }}
+                      transition={{
+                        duration: 2.5,
+                        repeat: Infinity,
+                        repeatDelay: 3,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <Rocket size={18} className="filter drop-shadow-sm" />
+                    </motion.div>
+                    <motion.span
+                      whileHover={{ x: 2 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
+                      Login
+                    </motion.span>
+                  </span>
+
+                  {/* Enhanced border effect */}
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-white/20"
+                    whileHover={{ borderColor: "rgba(255,255,255,0.4)" }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </Link>
+              </motion.div>
+            )}
           </div>
         </div>
       </nav>
@@ -66,20 +360,20 @@ const HomePage = () => {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-amber-50 to-white opacity-60"></div>
-        <div 
+        <div
           className="absolute top-20 right-10 w-96 h-96 bg-green-200 rounded-full blur-3xl opacity-20"
           style={{ transform: `translateY(${scrollY * 0.5}px)` }}
         ></div>
-        <div 
+        <div
           className="absolute bottom-20 left-10 w-96 h-96 bg-amber-200 rounded-full blur-3xl opacity-20"
           style={{ transform: `translateY(${-scrollY * 0.3}px)` }}
         ></div>
-        
+
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="inline-block bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
-                 Empowering Education in Rwanda
+                Empowering Education in Rwanda
               </div>
               <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
                 Preventing Student Dropouts with
@@ -173,8 +467,8 @@ const HomePage = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100"
               >
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-amber-500 rounded-2xl flex items-center justify-center text-white mb-6">

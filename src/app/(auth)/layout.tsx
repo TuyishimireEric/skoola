@@ -5,7 +5,7 @@ import "../globals.css";
 import { NavBar } from "@/components/menu/NavBar";
 
 export const metadata: Metadata = {
-  title: "Login to Ganzaa",
+  title: "Login to SkoolaSync",
   description: "Access your Ganzaa account to start learning and having fun!",
   keywords: [
     "login",

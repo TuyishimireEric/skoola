@@ -33,7 +33,7 @@ interface MenuItem {
   featured?: boolean;
 }
 
-interface UserMenuItem {
+export interface UserMenuItem {
   name: string;
   href: string;
   icon: LucideIcon;
