@@ -199,43 +199,53 @@ const AttendancePage: React.FC = () => {
     }, [filteredStudents, attendanceRecords]);
 
     // Save attendance to database
+    // In AttendancePage component
     const handleSaveAttendance = async () => {
         if (!canEditDate) {
             alert("Cannot save attendance for future dates");
             return;
         }
 
+        if (stats.unmarked === stats.total) {
+            alert("Please mark attendance for at least one student");
+            return;
+        }
+
         setIsSaving(true);
 
-        // Prepare data for database
         const attendanceData = {
             date: selectedDate,
-            records: Array.from(attendanceRecords.values()).filter(
-                record => record.status !== null
-            ),
-            metadata: {
-                totalStudents: stats.total,
-                present: stats.present,
-                late: stats.late,
-                absent: stats.absent,
-                excused: stats.excused,
-                attendanceRate: stats.attendanceRate,
-                submittedAt: new Date().toISOString(),
-            }
+            records: Array.from(attendanceRecords.values())
+                .filter(record => record.status !== null)
+                .map(record => ({
+                    studentId: record.studentId,
+                    status: record.status as "present" | "late" | "absent" | "excused",
+                    notes: record.notes || "",
+                })),
         };
 
         try {
-            console.log("Saving attendance data:", attendanceData);
+            const response = await fetch("/api/attendance", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(attendanceData),
+            });
 
-            // Here you would call your actual API
-            // await saveAttendance(attendanceData);
+            const result = await response.json();
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (!response.ok) {
+                throw new Error(result.message || "Failed to save attendance");
+            }
 
             alert("Attendance saved successfully!");
+
+            // Optionally refresh the data
+            // refetch();
         } catch (error) {
             console.error("Error saving attendance:", error);
-            alert("Failed to save attendance. Please try again.");
+            alert(error instanceof Error ? error.message : "Failed to save attendance. Please try again.");
         } finally {
             setIsSaving(false);
         }

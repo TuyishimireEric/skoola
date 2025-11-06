@@ -6,3 +6,5 @@ export * from "./game";
 export * from "./goals";
 export * from "./questionBank";
 export * from "./reviews";
+export * from "./attendance";
+ 
