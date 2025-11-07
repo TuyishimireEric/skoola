@@ -7,4 +7,5 @@ export * from "./goals";
 export * from "./questionBank";
 export * from "./reviews";
 export * from "./attendance";
+export * from "./courses";
  

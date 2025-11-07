@@ -240,3 +240,123 @@ export interface LeaderBoardI {
   averageScore: number;
   rank: number;
 }
+
+export const courseStatusEnum = z.enum(["Draft", "Published", "Archived"]);
+
+export const courseSchema = z.object({
+  Id: z.string().uuid().optional(),
+  Title: z.string().min(1, "Title is required").max(200, "Title is too long"),
+  Description: z.string().max(1000, "Description is too long").optional(),
+  ImageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")),
+  Grade: z.string().min(1, "Grade is required"),
+  Subject: z.string().max(100, "Subject is too long").optional(),
+  Status: courseStatusEnum.default("Draft"),
+  Order: z.number().int().min(0).default(0),
+  IsActive: z.boolean().default(true),
+  OrganizationId: z.string().uuid().optional(),
+});
+
+export const coursePerformanceSchema = z.object({
+  Id: z.string().uuid().optional(),
+  CourseId: z.string().uuid("Invalid course ID"),
+  StudentId: z.string().uuid("Invalid student ID"),
+  Assignment1: z.number().min(0).max(100).optional().nullable(),
+  Assignment2: z.number().min(0).max(100).optional().nullable(),
+  CAT: z.number().min(0).max(100).optional().nullable(),
+  Exam: z.number().min(0).max(100).optional().nullable(),
+  Total: z.number().min(0).max(100).optional().nullable(),
+  Grade: z.string().max(2).optional().nullable(),
+  Remarks: z.string().max(500).optional().nullable(),
+  Term: z.string().optional(),
+  AcademicYear: z.string().optional(),
+  OrganizationId: z.string().uuid().optional(),
+});
+
+export const bulkPerformanceSchema = z.object({
+  CourseId: z.string().uuid("Invalid course ID"),
+  Term: z.string().min(1, "Term is required"),
+  AcademicYear: z.string().min(1, "Academic year is required"),
+  Performances: z.array(
+    z.object({
+      StudentId: z.string().uuid("Invalid student ID"),
+      Assignment1: z.number().min(0).max(100).optional().nullable(),
+      Assignment2: z.number().min(0).max(100).optional().nullable(),
+      CAT: z.number().min(0).max(100).optional().nullable(),
+      Exam: z.number().min(0).max(100).optional().nullable(),
+      Remarks: z.string().max(500).optional().nullable(),
+    })
+  ).min(1, "At least one performance record is required"),
+});
+
+export type CourseStatus = z.infer<typeof courseStatusEnum>;
+export type CourseInput = z.infer<typeof courseSchema>;
+export type CoursePerformanceInput = z.infer<typeof coursePerformanceSchema>;
+export type BulkPerformanceInput = z.infer<typeof bulkPerformanceSchema>;
+
+export interface CourseDataI {
+  Id?: string;
+  Title: string;
+  Description?: string;
+  ImageUrl?: string;
+  Grade: string;
+  Subject?: string;
+  Status: CourseStatus;
+  Order?: number;
+  IsActive?: boolean;
+  OrganizationId: string;
+  CreatedBy?: string;
+  UpdatedBy?: string;
+  CreatedOn?: string;
+  UpdatedOn?: string;
+  // Additional fields from joins
+  CreatorName?: string;
+  CreatorImage?: string;
+  TotalStudents?: number;
+  AveragePerformance?: number;
+}
+
+export interface CoursePerformanceDataI {
+  Id?: string;
+  CourseId: string;
+  StudentId: string;
+  Assignment1?: number | null;
+  Assignment2?: number | null;
+  CAT?: number | null;
+  Exam?: number | null;
+  Total?: number | null;
+  Grade?: string | null;
+  Remarks?: string | null;
+  Term?: string;
+  AcademicYear?: string;
+  OrganizationId: string;
+  CreatedBy?: string;
+  UpdatedBy?: string;
+  CreatedOn?: string;
+  UpdatedOn?: string;
+  // Additional fields from joins
+  StudentName?: string;
+  StudentGrade?: string;
+  StudentAvatar?: string;
+  CourseName?: string;
+  CourseSubject?: string;
+}
+
+export interface StudentPerformanceSummaryI {
+  StudentId: string;
+  StudentName: string;
+  StudentGrade: string;
+  StudentAvatar?: string;
+  Courses: Array<{
+    CourseId: string;
+    CourseName: string;
+    Subject: string;
+    Assignment1?: number | null;
+    Assignment2?: number | null;
+    CAT?: number | null;
+    Exam?: number | null;
+    Total?: number | null;
+    Grade?: string | null;
+  }>;
+  OverallAverage: number;
+  TotalCourses: number;
+}
