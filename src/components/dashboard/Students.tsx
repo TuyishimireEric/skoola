@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Search,
   Grid,
@@ -15,24 +15,11 @@ import {
   CheckCircle,
   ChevronRight,
   X,
+  Loader2,
 } from "lucide-react";
-import Link from "next/link";
-
-interface Student {
-  id: string;
-  name: string;
-  grade: string;
-  avatar: string;
-  attendance: number;
-  lastActive: string;
-  email: string;
-  phone: string;
-  gradeAverage: number;
-  behaviorScore: number;
-  dropoutRisk: number;
-  status: "excellent" | "good" | "warning" | "critical";
-  recentActivity: string;
-}
+import { useStudents } from "@/hooks/user/useStudents";
+import { StudentListResponse } from "@/server/queries/students";
+import { AddStudents } from "../users/AddStudents";
 
 type ViewMode = "grid" | "list";
 type FilterStatus = "all" | "excellent" | "good" | "warning" | "critical";
@@ -43,144 +30,97 @@ const StudentsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<string>("asc");
+  const [activeOnly, setActiveOnly] = useState<boolean>(false);
+  const [addStudent, setAddStudent] = useState<boolean>(false);
+  const grade =
+    selectedGrade === "all" ? "" : selectedGrade.replace("Grade ", "");
 
-  // Sample student data
-  const students: Student[] = [
-    {
-      id: "1",
-      name: "Aisha Kalisa",
-      grade: "Grade 10",
-      avatar: "AK",
-      attendance: 95,
-      lastActive: "2 hours ago",
-      email: "aisha.k@school.com",
-      phone: "+250 788 123 456",
-      gradeAverage: 88,
-      behaviorScore: 92,
-      dropoutRisk: 15,
-      status: "excellent",
-      recentActivity: "Completed Math Quiz (85/100)",
-    },
-    {
-      id: "2",
-      name: "Jean-Pierre Mugabo",
-      grade: "Grade 10",
-      avatar: "JM",
-      attendance: 88,
-      lastActive: "5 hours ago",
-      email: "jean.m@school.com",
-      phone: "+250 788 234 567",
-      gradeAverage: 76,
-      behaviorScore: 78,
-      dropoutRisk: 45,
-      status: "warning",
-      recentActivity: "Late arrival (30 mins)",
-    },
-    {
-      id: "3",
-      name: "Fatima Senghor",
-      grade: "Grade 9",
-      avatar: "FS",
-      attendance: 92,
-      lastActive: "1 day ago",
-      email: "fatima.s@school.com",
-      phone: "+250 788 345 678",
-      gradeAverage: 82,
-      behaviorScore: 88,
-      dropoutRisk: 20,
-      status: "good",
-      recentActivity: "Submitted Homework",
-    },
-    {
-      id: "4",
-      name: "Emmanuel Nkurunziza",
-      grade: "Grade 10",
-      avatar: "EN",
-      attendance: 72,
-      lastActive: "3 days ago",
-      email: "emmanuel.n@school.com",
-      phone: "+250 788 456 789",
-      gradeAverage: 45,
-      behaviorScore: 62,
-      dropoutRisk: 72,
-      status: "critical",
-      recentActivity: "Absent from class",
-    },
-    {
-      id: "5",
-      name: "Sarah Uwamahoro",
-      grade: "Grade 9",
-      avatar: "SU",
-      attendance: 98,
-      lastActive: "1 hour ago",
-      email: "sarah.u@school.com",
-      phone: "+250 788 567 890",
-      gradeAverage: 94,
-      behaviorScore: 96,
-      dropoutRisk: 8,
-      status: "excellent",
-      recentActivity: "Top scorer in Science test",
-    },
-    {
-      id: "6",
-      name: "Michael Okonkwo",
-      grade: "Grade 11",
-      avatar: "MO",
-      attendance: 85,
-      lastActive: "4 hours ago",
-      email: "michael.o@school.com",
-      phone: "+250 788 678 901",
-      gradeAverage: 79,
-      behaviorScore: 82,
-      dropoutRisk: 35,
-      status: "good",
-      recentActivity: "Participated in debate club",
-    },
-    {
-      id: "7",
-      name: "Grace Uwase",
-      grade: "Grade 11",
-      avatar: "GU",
-      attendance: 78,
-      lastActive: "1 day ago",
-      email: "grace.u@school.com",
-      phone: "+250 788 789 012",
-      gradeAverage: 68,
-      behaviorScore: 72,
-      dropoutRisk: 58,
-      status: "warning",
-      recentActivity: "Sleeping in class (reported)",
-    },
-    {
-      id: "8",
-      name: "David Kimani",
-      grade: "Grade 9",
-      avatar: "DK",
-      attendance: 87,
-      lastActive: "6 hours ago",
-      email: "david.k@school.com",
-      phone: "+250 788 890 123",
-      gradeAverage: 81,
-      behaviorScore: 85,
-      dropoutRisk: 25,
-      status: "good",
-      recentActivity: "Joined study group",
-    },
+  const {
+    data: studentsData,
+    isLoading,
+    isError,
+    refetch,
+  } = useStudents({
+    page,
+    pageSize,
+    searchText: searchQuery,
+    sort: sortBy,
+    order: sortOrder,
+    activeOnly,
+    grade,
+  });
+
+  const students = studentsData?.students || [];
+
+  // Helper functions
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getStatusFromScore = (score: number): "excellent" | "good" | "warning" | "critical" => {
+    if (score >= 85) return "excellent";
+    if (score >= 70) return "good";
+    if (score >= 50) return "warning";
+    return "critical";
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return "Just now";
+  };
+
+  const getAttendance = (student: StudentListResponse) => {
+    return student.currentStreak > 0
+      ? Math.min(95, 70 + student.currentStreak * 5)
+      : 75;
+  };
+
+  const getDropoutRisk = (student: StudentListResponse) => {
+    return student.averageScore > 0
+      ? Math.max(0, 100 - student.averageScore)
+      : 30;
+  };
+
+  const grades = [
+    "all",
+    "Grade 1",
+    "Grade 2",
+    "Grade 3",
+    "Grade 4",
+    "Grade 5",
+    "Grade 6",
   ];
 
-  const grades = ["all", "Grade 9", "Grade 10", "Grade 11"];
-
   // Filter students
-  const filteredStudents = students.filter((student) => {
-    const matchesGrade =
-      selectedGrade === "all" || student.grade === selectedGrade;
-    const matchesSearch = student.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || student.status === statusFilter;
-    return matchesGrade && matchesSearch && matchesStatus;
-  });
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
+      const matchesGrade =
+        selectedGrade === "all" || student.grade === selectedGrade || !student.grade;
+      const matchesSearch = student.fullName
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const studentStatus = getStatusFromScore(student.averageScore || 0);
+      const matchesStatus =
+        statusFilter === "all" || studentStatus === statusFilter;
+      return matchesGrade && matchesSearch && matchesStatus;
+    });
+  }, [students, selectedGrade, searchQuery, statusFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -212,24 +152,61 @@ const StudentsPage: React.FC = () => {
     }
   };
 
-  const stats = {
-    total: filteredStudents.length,
-    avgAttendance: Math.round(
-      filteredStudents.reduce((acc, s) => acc + s.attendance, 0) /
+  const stats = useMemo(() => {
+    const attendances = filteredStudents.map(s => getAttendance(s));
+    const avgAttendance = attendances.length > 0
+      ? Math.round(attendances.reduce((acc, val) => acc + val, 0) / attendances.length)
+      : 0;
+
+    const avgGrade = filteredStudents.length > 0
+      ? Math.round(
+        filteredStudents.reduce((acc, s) => acc + (s.averageScore || 0), 0) /
         filteredStudents.length
-    ),
-    atRisk: filteredStudents.filter((s) => s.dropoutRisk > 50).length,
-    avgGrade: Math.round(
-      filteredStudents.reduce((acc, s) => acc + s.gradeAverage, 0) /
-        filteredStudents.length
-    ),
-  };
+      )
+      : 0;
+
+    const atRisk = filteredStudents.filter((s) => getDropoutRisk(s) > 50).length;
+
+    return {
+      total: filteredStudents.length,
+      avgAttendance,
+      atRisk,
+      avgGrade,
+    };
+  }, [filteredStudents]);
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Failed to load students
+          </h3>
+          <button
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl py-6 mx-auto">
+      {addStudent && (
+        <AddStudents
+          isOpen={addStudent}
+          onClose={() => setAddStudent(false)}
+          myClassId={null}
+        />
+      )}
+
+      <div className="py-6 max-w-7xl mx-auto pr-4">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -238,7 +215,7 @@ const StudentsPage: React.FC = () => {
               <div>
                 <p className="text-xs text-gray-600">Total Students</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {stats.total}
+                  {isLoading ? "..." : stats.total}
                 </p>
               </div>
             </div>
@@ -252,7 +229,7 @@ const StudentsPage: React.FC = () => {
               <div>
                 <p className="text-xs text-gray-600">Avg Attendance</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {stats.avgAttendance}%
+                  {isLoading ? "..." : `${stats.avgAttendance}%`}
                 </p>
               </div>
             </div>
@@ -266,7 +243,7 @@ const StudentsPage: React.FC = () => {
               <div>
                 <p className="text-xs text-gray-600">Avg Grade</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {stats.avgGrade}%
+                  {isLoading ? "..." : `${stats.avgGrade}%`}
                 </p>
               </div>
             </div>
@@ -280,7 +257,7 @@ const StudentsPage: React.FC = () => {
               <div>
                 <p className="text-xs text-gray-600">At Risk</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {stats.atRisk}
+                  {isLoading ? "..." : stats.atRisk}
                 </p>
               </div>
             </div>
@@ -290,7 +267,6 @@ const StudentsPage: React.FC = () => {
         {/* Filters and Actions Bar */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-            {/* Search */}
             <div className="relative flex-1 w-full lg:max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -302,7 +278,6 @@ const StudentsPage: React.FC = () => {
               />
             </div>
 
-            {/* Actions */}
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -315,21 +290,19 @@ const StudentsPage: React.FC = () => {
               <div className="flex gap-1 border border-gray-300 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded transition-colors ${
-                    viewMode === "grid"
-                      ? "bg-green-500 text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                  className={`p-2 rounded transition-colors ${viewMode === "grid"
+                    ? "bg-green-500 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                    }`}
                 >
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-2 rounded transition-colors ${
-                    viewMode === "list"
-                      ? "bg-green-500 text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                  className={`p-2 rounded transition-colors ${viewMode === "list"
+                    ? "bg-green-500 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                    }`}
                 >
                   <List className="w-4 h-4" />
                 </button>
@@ -340,40 +313,36 @@ const StudentsPage: React.FC = () => {
                 Export
               </button>
 
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all">
+              <button onClick={() => setAddStudent(true)} className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all">
                 <UserPlus className="w-4 h-4" />
                 Add Student
               </button>
             </div>
           </div>
 
-          {/* Expandable Filters */}
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Grade Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Grade Level
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {grades.map((grade) => (
+                    {grades.map((gradeOption) => (
                       <button
-                        key={grade}
-                        onClick={() => setSelectedGrade(grade)}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                          selectedGrade === grade
-                            ? "bg-green-500 text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                        key={gradeOption}
+                        onClick={() => setSelectedGrade(gradeOption)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${selectedGrade === gradeOption
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
                       >
-                        {grade === "all" ? "All Grades" : grade}
+                        {gradeOption === "all" ? "All Grades" : gradeOption}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Status Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Student Status
@@ -386,11 +355,10 @@ const StudentsPage: React.FC = () => {
                           onClick={() =>
                             setStatusFilter(status as FilterStatus)
                           }
-                          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors capitalize ${
-                            statusFilter === status
-                              ? "bg-green-500 text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
+                          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors capitalize ${statusFilter === status
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
                         >
                           {status}
                         </button>
@@ -403,226 +371,287 @@ const StudentsPage: React.FC = () => {
           )}
         </div>
 
-        {/* Students Display */}
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredStudents.map((student) => (
-              <div
-                key={student.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer group"
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold">
-                      {student.avatar}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-                        {student.name}
-                      </h3>
-                      <p className="text-xs text-gray-500">{student.grade}</p>
-                    </div>
-                  </div>
-                  <div
-                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border ${getStatusColor(
-                      student.status
-                    )}`}
-                  >
-                    {getStatusIcon(student.status)}
-                    <span className="capitalize">{student.status}</span>
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="text-center p-2 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Attendance</p>
-                    <p
-                      className={`text-sm font-bold ${
-                        student.attendance >= 90
-                          ? "text-green-600"
-                          : student.attendance >= 80
-                          ? "text-yellow-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {student.attendance}%
-                    </p>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Grade Avg</p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {student.gradeAverage}%
-                    </p>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Risk</p>
-                    <p
-                      className={`text-sm font-bold ${
-                        student.dropoutRisk >= 70
-                          ? "text-red-600"
-                          : student.dropoutRisk >= 50
-                          ? "text-orange-600"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {student.dropoutRisk}%
-                    </p>
-                  </div>
-                </div>
-
-                {/* Recent Activity */}
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-xs text-gray-600 mb-1">Recent Activity</p>
-                  <p className="text-xs font-medium text-gray-900">
-                    {student.recentActivity}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {student.lastActive}
-                  </p>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all">
-                    View Profile
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                  <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <Mail className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                      Student
-                    </th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                      Grade
-                    </th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                      Status
-                    </th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                      Attendance
-                    </th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                      Grade Avg
-                    </th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                      Risk Level
-                    </th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                      Last Active
-                    </th>
-                    <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredStudents.map((student) => (
-                    <tr
-                      key={student.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
-                            {student.avatar}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm text-gray-900">
-                              {student.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {student.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm text-gray-700">
-                        {student.grade}
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border ${getStatusColor(
-                            student.status
-                          )}`}
-                        >
-                          {getStatusIcon(student.status)}
-                          <span className="capitalize">{student.status}</span>
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 max-w-20 bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${
-                                student.attendance >= 90
-                                  ? "bg-green-500"
-                                  : student.attendance >= 80
-                                  ? "bg-yellow-500"
-                                  : "bg-red-500"
-                              }`}
-                              style={{ width: `${student.attendance}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-semibold text-gray-900">
-                            {student.attendance}%
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm font-semibold text-gray-900">
-                        {student.gradeAverage}%
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`text-sm font-bold ${
-                            student.dropoutRisk >= 70
-                              ? "text-red-600"
-                              : student.dropoutRisk >= 50
-                              ? "text-orange-600"
-                              : "text-green-600"
-                          }`}
-                        >
-                          {student.dropoutRisk}%
-                        </span>
-                      </td>
-                      <td className="p-4 text-sm text-gray-600">
-                        {student.lastActive}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                            <Mail className="w-4 h-4 text-gray-600" />
-                          </button>
-                          <Link
-                            href={`/students/${student.id}`}
-                            className="px-3 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors"
-                          >
-                            View
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Loading students...</p>
           </div>
         )}
 
+        <div className="max-w-full">
+          {/* Students Display - Grid View */}
+          {!isLoading && viewMode === "grid" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-w-full">
+              {filteredStudents.map((student) => {
+                const studentStatus = getStatusFromScore(student.averageScore || 0);
+                const attendance = getAttendance(student);
+                const dropoutRisk = getDropoutRisk(student);
+                const displayAvatar = student.avatar || getInitials(student.fullName);
+
+                return (
+                  <div
+                    key={student.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        {student.avatar ? (
+                          <img
+                            src={student.avatar}
+                            alt={student.fullName}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold">
+                            {displayAvatar}
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-bold text-sm text-gray-900 group-hover:text-green-600 transition-colors">
+                            {student.fullName}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {student.grade || "Not Assigned"}
+                          </p>
+                        </div>
+                      </div>
+                      <div
+                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border ${getStatusColor(
+                          studentStatus
+                        )}`}
+                      >
+                        {getStatusIcon(studentStatus)}
+                        <span className="capitalize">{studentStatus}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-2 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1">Attendance</p>
+                        <p
+                          className={`text-sm font-bold ${attendance >= 90
+                            ? "text-green-600"
+                            : attendance >= 80
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                            }`}
+                        >
+                          {attendance}%
+                        </p>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1">Grade Avg</p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {student.averageScore || 0}%
+                        </p>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1">Risk</p>
+                        <p
+                          className={`text-sm font-bold ${dropoutRisk >= 70
+                            ? "text-red-600"
+                            : dropoutRisk >= 50
+                              ? "text-orange-600"
+                              : "text-green-600"
+                            }`}
+                        >
+                          {dropoutRisk}%
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-600 mb-1">Recent Activity</p>
+                      <p className="text-xs font-medium text-gray-900">
+                        {student.totalCourses > 0
+                          ? `Enrolled in ${student.totalCourses} course${student.totalCourses !== 1 ? 's' : ''}`
+                          : "No recent activity"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {getTimeAgo(student.lastActivity)}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all">
+                        View Profile
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                      <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <Mail className="w-4 h-4 text-gray-600" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Students Display - List View */}
+          {!isLoading && viewMode === "list" && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                        Student
+                      </th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                        Grade
+                      </th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                        Status
+                      </th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                        Attendance
+                      </th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                        Grade Avg
+                      </th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                        Risk Level
+                      </th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                        Last Active
+                      </th>
+                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredStudents.map((student) => {
+                      const studentStatus = getStatusFromScore(student.averageScore || 0);
+                      const attendance = getAttendance(student);
+                      const dropoutRisk = getDropoutRisk(student);
+                      const displayAvatar = student.avatar || getInitials(student.fullName);
+
+                      return (
+                        <tr
+                          key={student.id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              {student.avatar ? (
+                                <img
+                                  src={student.avatar}
+                                  alt={student.fullName}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+                                  {displayAvatar}
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-semibold text-sm text-gray-900">
+                                  {student.fullName}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {student.email || student.userName}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 text-sm text-gray-700">
+                            {student.grade || "Not Assigned"}
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border ${getStatusColor(
+                                studentStatus
+                              )}`}
+                            >
+                              {getStatusIcon(studentStatus)}
+                              <span className="capitalize">{studentStatus}</span>
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 max-w-20 bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full ${attendance >= 90
+                                    ? "bg-green-500"
+                                    : attendance >= 80
+                                      ? "bg-yellow-500"
+                                      : "bg-red-500"
+                                    }`}
+                                  style={{ width: `${attendance}%` }}
+                                />
+                              </div>
+                              <span className="text-sm font-semibold text-gray-900">
+                                {attendance}%
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-4 text-sm font-semibold text-gray-900">
+                            {student.averageScore || 0}%
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`text-sm font-bold ${dropoutRisk >= 70
+                                ? "text-red-600"
+                                : dropoutRisk >= 50
+                                  ? "text-orange-600"
+                                  : "text-green-600"
+                                }`}
+                            >
+                              {dropoutRisk}%
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {getTimeAgo(student.lastActivity)}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                                <Mail className="w-4 h-4 text-gray-600" />
+                              </button>
+                              <button className="px-3 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors">
+                                View
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {studentsData && studentsData.totalPages > 1 && (
+                <div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing page {page} of {studentsData.totalPages} ({studentsData.totalCount} total students)
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setPage(p => Math.min(studentsData.totalPages, p + 1))}
+                      disabled={page === studentsData.totalPages}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Empty State */}
-        {filteredStudents.length === 0 && (
+        {!isLoading && filteredStudents.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-gray-400" />

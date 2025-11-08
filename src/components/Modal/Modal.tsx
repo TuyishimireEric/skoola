@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
 import React, { ReactNode, MouseEvent } from "react";
-import Image from "next/image";
 
 type ModalProps = {
   isOpen?: boolean;
@@ -33,9 +32,7 @@ const Modal: React.FC<ModalProps> = ({
   closeOnOverlayClick = true,
   title = "",
   customHeader,
-  logo = true,
   theme = "default",
-  headerIcon,
   confetti = true,
 }) => {
   if (!isOpen) return null;
@@ -141,31 +138,8 @@ const Modal: React.FC<ModalProps> = ({
 
             <div className="z-[115] relative">
               {/* Logo positioned at the top center */}
-              {logo && (
-                <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 z-[115]">
-                  <div className="w-14 h-14 bg-white rounded-full p-2 border-2 border-primary-200 shadow-lg flex items-center justify-center animate-float-gentle">
-                    {headerIcon ? (
-                      <Image
-                        src={headerIcon}
-                        alt="logo"
-                        width={30}
-                        height={30}
-                        className="object-contain"
-                      />
-                    ) : (
-                      <Image
-                        src="/Logo.png"
-                        alt="logo"
-                        width={30}
-                        height={30}
-                        className="object-contain"
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
 
-              <div className="text-center relative mt-4">
+              <div className="text-center relative">
                 <h2 className="text-2xl font-comic font-bold text-primary-700 mb-2">
                   {confetti && (
                     <span className="inline-block mr-2 animate-bounce">🎉</span>

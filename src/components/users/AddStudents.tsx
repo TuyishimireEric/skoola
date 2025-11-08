@@ -383,6 +383,7 @@ export const AddStudents = ({
       setErrorMessage("");
       setExcelFile(null);
       setParsedData([]);
+      onClose();
       setShowParsedData(false);
     }
   }, [isSuccess]);

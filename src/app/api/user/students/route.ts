@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { Students } = await req.json();
+    const { Students, grade } = await req.json();
 
     // Handle both single student and array of students
     const studentsArray: StudentInput[] = Array.isArray(Students)
@@ -154,12 +154,18 @@ export async function POST(req: NextRequest) {
             : null,
           parentName: student.parentName?.trim() || null,
           parentEmail: student.parentEmail?.toLowerCase().trim() || null,
-          grade: student.grade || null,
+          grade: student.grade || grade || null,
           userNumber: userNumber,
           userName: `user${userNumber.toString().padStart(6, "0")}`, // e.g., user000001, user000002
         };
       }
     );
+
+    console.log("================================");
+
+    console.log("Student Records to Process:", studentRecords);
+
+    console.log("================================");
 
     // Check for existing students based on fullName and parentEmail combination
     const existingStudentsQuery =

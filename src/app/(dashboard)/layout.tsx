@@ -2,8 +2,8 @@ import SideNav from "@/components/menu/SideMenu";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Ganzaa",
-  description: "Ganzaa",
+  title: "Skoola - Dashboard",
+  description: "Skoola Dashboard Layout",
 };
 
 export default function RootLayout({
