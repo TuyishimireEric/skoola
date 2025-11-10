@@ -90,16 +90,16 @@ const GameCard = ({
         initial={{ opacity: 0, y: 20, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ delay: 0.1 + index * 0.05 }}
-        whileHover={{ scale: 1.05, y: -8, rotate: 1 }}
+        whileHover={{ scale: 1.05, y: -5, rotate: 1 }}
         className="relative"
       >
-        <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border-4 border-primary-200 hover:border-yellow-400 overflow-hidden transition-all duration-300 transform hover:shadow-3xl hover:border-primary-400">
+        <div className="bg-white/95 backdrop-blur-sm rounded-3xl border-4 border-primary-200 hover:border-yellow-400 overflow-hidden transition-all duration-300 transform hover:border-primary-400">
           {/* Game Image */}
           <div className="h-52 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-primary-100/30"></div>
 
             {/* Admin Type Badge */}
-            {isAdmin && (
+            {/* {isAdmin && (
               <div className="absolute top-4 left-4 z-10">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold ${typeInfo.color}`}
@@ -107,14 +107,14 @@ const GameCard = ({
                   {typeInfo.emoji} {typeInfo.label}
                 </span>
               </div>
-            )}
+            )} */}
 
             {/* Grade Badge for Admin */}
             {isAdmin && game.Grade && (
               <div className="absolute top-4 right-4 z-10">
                 <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
                   <span className="text-xs font-bold text-gray-700">
-                    Grade {game.Grade}
+                    P{game.Grade}
                   </span>
                 </div>
               </div>
@@ -153,7 +153,7 @@ const GameCard = ({
           <div className="p-4 px-6 bg-gradient-to-b from-white to-primary-50/50">
             {/* Title */}
             <div className="flex justify-between">
-              <h3 className="font-bold text-2xl text-primary-800 mb-2 line-clamp-1 font-comic">
+              <h3 className="font-bold text-xl text-primary-800 mb-2 line-clamp-1 font-comic">
                 {game.Title}
               </h3>
 
@@ -170,12 +170,12 @@ const GameCard = ({
               )}
             </div>
 
-            <p className="text-primary-600 text-base mb-4 line-clamp-2 leading-relaxed font-comic">
+            <p className="text-primary-600 text-sm mb-4 line-clamp-2 leading-relaxed font-comic">
               {game.Description}
             </p>
 
             {/* Admin Stats */}
-            {isAdmin && (
+            {/* {isAdmin && (
               <div className="grid grid-cols-3 gap-4 mb-4 text-center">
                 <div className="bg-blue-50 rounded-xl p-2">
                   <Users className="w-4 h-4 text-blue-500 mx-auto mb-1" />
@@ -199,7 +199,7 @@ const GameCard = ({
                   <p className="text-xs text-purple-600">Complete</p>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Action Buttons */}
             {isAdmin ? (
@@ -229,7 +229,7 @@ const GameCard = ({
                   </button>
                 </div>
                 <Link
-                  href={`/school/games/${game.Id}`}
+                  href={`/courses/${game.Id}`}
                   className="bg-primary-500 text-white px-4 py-2 rounded-xl hover:bg-primary-600 transition-colors font-comic font-bold text-sm flex items-center space-x-1"
                 >
                   <PlayCircle className="w-4 h-4" />
@@ -238,7 +238,7 @@ const GameCard = ({
               </div>
             ) : (
               <Link
-                href={`games/${game.Id}`}
+                href={`courses/${game.Id}`}
                 className="w-full bg-gradient-to-r from-yellow-400 via-primary-400 to-orange-400 hover:from-yellow-500 hover:via-primary-500 hover:to-orange-500 text-white py-3 rounded-2xl flex items-center justify-center gap-3 font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 font-comic border-2 border-yellow-300 hover:border-yellow-400"
               >
                 <Play className="w-6 h-6" />

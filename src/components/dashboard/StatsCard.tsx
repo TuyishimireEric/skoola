@@ -16,7 +16,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
   if (isLoading) {
     return (
       <div
-        className={`bg-primary-50 rounded-3xl p-4 shadow-lg border-8 ${color} overflow-hidden relative font-comic animate-pulse`}
+        className={`bg-primary-50 rounded-3xl p-4 shadow-lg border-2 ${color} overflow-hidden relative font-comic animate-pulse`}
       >
         <div className="flex items-center space-x-3">
           <div
@@ -37,7 +37,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
 
   return (
     <div
-      className={`bg-primary-50 rounded-3xl p-4 shadow-lg border-8 ${color} overflow-hidden relative font-comic`}
+      className={`bg-primary-50 rounded-2xl p-4 shadow-lg border-2 ${color} overflow-hidden relative font-comic`}
     >
       <div className="flex items-center space-x-3">
         <div

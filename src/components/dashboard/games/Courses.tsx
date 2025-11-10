@@ -315,7 +315,7 @@ const SchoolCoursesView: React.FC = () => {
       : 0;
 
   return (
-    <div className="flex flex-col w-full h-full p-4 lg:p-6 min-h-screen">
+    <div className="flex flex-col w-full h-full p-4 min-h-screen">
       {/* Grade Selection */}
       {!selectedGrade && (
         <motion.div
@@ -323,16 +323,7 @@ const SchoolCoursesView: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="backdrop-blur-xl rounded-3xl text-center"
         >
-          <Breadcrumb />
-          <div className="mb-6 ">
-            <h2 className="text-2xl font-bold font-comic text-primary-700 mb-3">
-              🎯 Select a Grade to Begin
-            </h2>
-            <p className="text-lg text-primary-600 font-comic">
-              Choose which grade level you&apos;d like to manage courses for! 📖
-            </p>
-          </div>
-
+          {/* <Breadcrumb /> */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -344,7 +335,7 @@ const SchoolCoursesView: React.FC = () => {
                 GRADES.map((_, index) => (
                   <div
                     key={index}
-                    className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-lg border-2 border-gray-200 animate-pulse"
+                    className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-lg border-2 border-green-200 animate-pulse"
                   >
                     <div className="h-6 bg-gray-300 rounded mb-4"></div>
                     <div className="grid grid-cols-2 gap-4 mb-6">
@@ -364,12 +355,12 @@ const SchoolCoursesView: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 * index }}
-                      whileHover={{ y: -8, scale: 1.02 }}
+                      whileHover={{ y: -6, scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onHoverStart={() => setHoveredGrade(grade)}
                       onHoverEnd={() => setHoveredGrade("")}
                       onClick={() => setSelectedGrade(grade)}
-                      className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-lg border-2 border-gray-200 hover:border-orange-300 cursor-pointer transition-all duration-300 group relative overflow-hidden"
+                      className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-lg border-2 border-gray-200 hover:border-orange-300 cursor-pointer transition-all duration-300 group relative overflow-hidden"
                     >
                       {/* Background Pattern */}
                       <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-red-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -388,10 +379,10 @@ const SchoolCoursesView: React.FC = () => {
                               <Target className="w-6 h-6" />
                             </div>
                             <div>
-                              <h3 className="text-2xl font-bold text-gray-800">
-                                Grade {grade}
+                              <h3 className="text-3xl w-full font-bold text-gray-800">
+                                P{grade}
                               </h3>
-                              <p className="text-gray-500">Primary Level</p>
+                              {/* <p className="text-gray-500">Primary Level</p> */}
                             </div>
                           </div>
                           <ChevronRight
@@ -440,7 +431,7 @@ const SchoolCoursesView: React.FC = () => {
                               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                           }`}
                         >
-                          <span>Manage Grade {grade}</span>
+                          <span>Primary {grade} Courses</span>
                           <ChevronRight className="w-4 h-4" />
                         </motion.button>
                       </div>
@@ -454,16 +445,8 @@ const SchoolCoursesView: React.FC = () => {
       {/* Main Content - Only show when grade is selected */}
       {selectedGrade && (
         <>
-          {/* Breadcrumb & Back Button */}
-          <div className="flex items-center justify-between mb-4">
-            <Breadcrumb
-              selectedGrade={selectedGrade}
-              onBack={() => setSelectedGrade("")}
-            />
-          </div>
-
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <StatsCard
               label="Total Courses"
               value={`${totalCourses}`}
@@ -538,33 +521,6 @@ const SchoolCoursesView: React.FC = () => {
                         {subject}
                       </option>
                     ))}
-                  </select>
-
-                  <select
-                    value={selectedType}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                      setSelectedType(e.target.value)
-                    }
-                    className="px-3 py-2 border-2 border-primary-300 rounded-xl font-comic text-sm focus:ring-2 focus:ring-primary-500"
-                  >
-                    {CONTENT_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={sortBy}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                      setSortBy(e.target.value as SortableKey)
-                    }
-                    className="px-3 py-2 border-2 border-primary-300 rounded-xl font-comic text-sm focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="Title">Sort by Title</option>
-                    <option value="StudentsAttended">Sort by Students</option>
-                    <option value="CompletionRate">Sort by Completion</option>
-                    <option value="AverageRating">Sort by Rating</option>
                   </select>
 
                   <select
@@ -647,7 +603,7 @@ const SchoolCoursesView: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative z-10"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10 max-w-7xl"
           >
             {isLoading ? (
               // Loading skeleton
