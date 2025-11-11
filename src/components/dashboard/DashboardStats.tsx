@@ -1,4 +1,4 @@
-"use clients";
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import Chart from "chart.js/auto";
@@ -8,26 +8,33 @@ import {
   TrendingDown,
   Users,
   Calendar,
-  BookOpen,
-  Activity,
+  Award,
   MessageSquare,
   CheckCircle,
   XCircle,
   Clock,
   AlertCircle,
-  Award,
-  Plus,
-  Bell,
   ChevronRight,
+  Loader2,
+  ChevronDown,
 } from "lucide-react";
+import { useDashboard } from "@/hooks/dashboard/useDashboard";
 
 // Chart Components
-const AttendanceTrendChart: React.FC = () => {
+interface AttendanceTrendChartProps {
+  data: Array<{
+    week: string;
+    attendanceRate: number;
+    atRiskCount: number;
+  }>;
+}
+
+const AttendanceTrendChart: React.FC<AttendanceTrendChartProps> = ({ data }) => {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstance = useRef<Chart | null>(null);
 
   useEffect(() => {
-    if (!chartRef.current) return;
+    if (!chartRef.current || !data || data.length === 0) return;
     const ctx = chartRef.current.getContext("2d");
     if (!ctx) return;
 
@@ -38,11 +45,11 @@ const AttendanceTrendChart: React.FC = () => {
     chartInstance.current = new Chart(ctx, {
       type: "line",
       data: {
-        labels: ["Week 1", "Week 2", "Week 3", "Week 4", "Current"],
+        labels: data.map((d) => d.week),
         datasets: [
           {
             label: "Class Attendance %",
-            data: [92, 90, 89, 87, 88],
+            data: data.map((d) => d.attendanceRate),
             borderColor: "#10b981",
             backgroundColor: "rgba(16, 185, 129, 0.1)",
             borderWidth: 3,
@@ -53,7 +60,7 @@ const AttendanceTrendChart: React.FC = () => {
           },
           {
             label: "At-Risk Students",
-            data: [2, 3, 3, 4, 5],
+            data: data.map((d) => d.atRiskCount),
             borderColor: "#ef4444",
             backgroundColor: "rgba(239, 68, 68, 0.1)",
             borderWidth: 3,
@@ -93,7 +100,7 @@ const AttendanceTrendChart: React.FC = () => {
             type: "linear",
             position: "left",
             beginAtZero: false,
-            min: 80,
+            min: 0,
             max: 100,
             title: {
               display: true,
@@ -125,17 +132,24 @@ const AttendanceTrendChart: React.FC = () => {
         chartInstance.current.destroy();
       }
     };
-  }, []);
+  }, [data]);
 
   return <canvas ref={chartRef} />;
 };
 
-const PerformanceDistributionChart: React.FC = () => {
+interface PerformanceDistributionChartProps {
+  data: Array<{
+    range: string;
+    count: number;
+  }>;
+}
+
+const PerformanceDistributionChart: React.FC<PerformanceDistributionChartProps> = ({ data }) => {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstance = useRef<Chart | null>(null);
 
   useEffect(() => {
-    if (!chartRef.current) return;
+    if (!chartRef.current || !data || data.length === 0) return;
     const ctx = chartRef.current.getContext("2d");
     if (!ctx) return;
 
@@ -146,11 +160,11 @@ const PerformanceDistributionChart: React.FC = () => {
     chartInstance.current = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: ["0-40%", "41-60%", "61-75%", "76-85%", "86-100%"],
+        labels: data.map((d) => d.range),
         datasets: [
           {
             label: "Number of Students",
-            data: [3, 8, 12, 6, 3],
+            data: data.map((d) => d.count),
             backgroundColor: [
               "#ef4444",
               "#f97316",
@@ -204,98 +218,24 @@ const PerformanceDistributionChart: React.FC = () => {
         chartInstance.current.destroy();
       }
     };
-  }, []);
+  }, [data]);
 
   return <canvas ref={chartRef} />;
 };
 
-const BehaviorIncidentsChart: React.FC = () => {
+interface DropoutRiskChartProps {
+  data: Array<{
+    name: string;
+    dropoutRisk: number;
+  }>;
+}
+
+const DropoutRiskChart: React.FC<DropoutRiskChartProps> = ({ data }) => {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstance = useRef<Chart | null>(null);
 
   useEffect(() => {
-    if (!chartRef.current) return;
-    const ctx = chartRef.current.getContext("2d");
-    if (!ctx) return;
-
-    if (chartInstance.current) {
-      chartInstance.current.destroy();
-    }
-
-    chartInstance.current = new Chart(ctx, {
-      type: "doughnut",
-      data: {
-        labels: [
-          "Positive Behavior",
-          "Late Arrivals",
-          "Disruptive",
-          "Sleeping",
-          "Incomplete Work",
-        ],
-        datasets: [
-          {
-            data: [45, 15, 8, 5, 12],
-            backgroundColor: [
-              "#10b981",
-              "#f59e0b",
-              "#ef4444",
-              "#8b5cf6",
-              "#ec4899",
-            ],
-            borderWidth: 2,
-            borderColor: "#ffffff",
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: "right",
-            labels: {
-              usePointStyle: true,
-              padding: 15,
-              font: { size: 11 },
-            },
-          },
-          tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            padding: 12,
-            callbacks: {
-              label: (context) => {
-                const label = context.label || "";
-                const value = context.parsed;
-                const dataset = context.dataset;
-                const total = dataset.data.reduce(
-                  (a: number, b: number) => a + b,
-                  0
-                );
-                const percentage = ((value / total) * 100).toFixed(1);
-                return `${label}: ${value} (${percentage}%)`;
-              },
-            },
-          },
-        },
-      },
-    });
-
-    return () => {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
-    };
-  }, []);
-
-  return <canvas ref={chartRef} />;
-};
-
-const DropoutRiskChart: React.FC = () => {
-  const chartRef = useRef<HTMLCanvasElement | null>(null);
-  const chartInstance = useRef<Chart | null>(null);
-
-  useEffect(() => {
-    if (!chartRef.current) return;
+    if (!chartRef.current || !data || data.length === 0) return;
     const ctx = chartRef.current.getContext("2d");
     if (!ctx) return;
 
@@ -306,24 +246,16 @@ const DropoutRiskChart: React.FC = () => {
     chartInstance.current = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: [
-          "Emmanuel N.",
-          "Grace U.",
-          "Jean-Paul M.",
-          "Aline K.",
-          "Patrick N.",
-        ],
+        labels: data.map((d) => d.name),
         datasets: [
           {
             label: "Dropout Risk %",
-            data: [72, 65, 58, 55, 52],
-            backgroundColor: (context) => {
-              const value = context.parsed?.y;
-              if (!value) return "#eab308";
-              if (value >= 70) return "#ef4444";
-              if (value >= 60) return "#f97316";
+            data: data.map((d) => d.dropoutRisk),
+            backgroundColor: data.map((d) => {
+              if (d.dropoutRisk >= 70) return "#ef4444";
+              if (d.dropoutRisk >= 60) return "#f97316";
               return "#eab308";
-            },
+            }),
             borderWidth: 0,
             borderRadius: 8,
           },
@@ -366,29 +298,10 @@ const DropoutRiskChart: React.FC = () => {
         chartInstance.current.destroy();
       }
     };
-  }, []);
+  }, [data]);
 
   return <canvas ref={chartRef} />;
 };
-
-interface AtRiskStudent {
-  id: number;
-  name: string;
-  dropoutRisk: number;
-  avatar: string;
-  concerns: string[];
-  status: string;
-  lastIncident: string;
-}
-
-interface ClassStat {
-  label: string;
-  value: string;
-  change: string;
-  trend: "up" | "down";
-  icon: React.ReactNode;
-  color: string;
-}
 
 interface RecentActivity {
   student: string;
@@ -405,83 +318,13 @@ interface AIRecommendation {
   action: string;
 }
 
-const SkoolaSyncDashboard: React.FC = () => {
-  // Mock data for students at risk
-  const atRiskStudents: AtRiskStudent[] = [
-    {
-      id: 1,
-      name: "Emmanuel Nkurunziza",
-      dropoutRisk: 72,
-      avatar: "EN",
-      concerns: [
-        "Attendance decreased 25%",
-        "Late 8 times this month",
-        "Math grade dropped to 45%",
-      ],
-      status: "critical",
-      lastIncident: "2 days ago",
-    },
-    {
-      id: 2,
-      name: "Grace Uwase",
-      dropoutRisk: 65,
-      avatar: "GU",
-      concerns: [
-        "Sleeping in class (5 incidents)",
-        "Incomplete homework (6/10)",
-        "Withdrawn behavior",
-      ],
-      status: "warning",
-      lastIncident: "1 day ago",
-    },
-    {
-      id: 3,
-      name: "Jean-Paul Mugabo",
-      dropoutRisk: 58,
-      avatar: "JM",
-      concerns: ["Disruptive behavior", "Failing Science", "Peer conflicts"],
-      status: "warning",
-      lastIncident: "3 days ago",
-    },
-  ];
+const Dashboard: React.FC = () => {
+  const [selectedGrade, setSelectedGrade] = useState<string>("");
+  const [showGradeDropdown, setShowGradeDropdown] = useState(false);
 
-  // Class statistics
-  const classStats: ClassStat[] = [
-    {
-      label: "Total Students",
-      value: "32",
-      change: "+2 this term",
-      trend: "up",
-      icon: <Users className="w-5 h-5" />,
-      color: "from-green-500 to-emerald-600",
-    },
-    {
-      label: "At Risk",
-      value: "5",
-      change: "+2 from last week",
-      trend: "up",
-      icon: <AlertTriangle className="w-5 h-5" />,
-      color: "from-red-500 to-orange-600",
-    },
-    {
-      label: "Average Attendance",
-      value: "88%",
-      change: "-3% this week",
-      trend: "down",
-      icon: <Calendar className="w-5 h-5" />,
-      color: "from-blue-500 to-cyan-600",
-    },
-    {
-      label: "Class Average",
-      value: "74%",
-      change: "+5% improvement",
-      trend: "up",
-      icon: <Award className="w-5 h-5" />,
-      color: "from-purple-500 to-pink-600",
-    },
-  ];
+  const { data: dashboardData, isLoading, isError, error } = useDashboard(selectedGrade);
 
-  // Recent activities
+  // Mock data for recent activities (as requested)
   const recentActivities: RecentActivity[] = [
     {
       student: "Aisha Kalisa",
@@ -513,7 +356,7 @@ const SkoolaSyncDashboard: React.FC = () => {
     },
   ];
 
-  // AI Recommendations
+  // Mock AI Recommendations (as requested)
   const aiRecommendations: AIRecommendation[] = [
     {
       priority: "high",
@@ -543,27 +386,149 @@ const SkoolaSyncDashboard: React.FC = () => {
     return "Moderate Risk";
   };
 
-  return (
-    <div className="min-h-screen">
-      <main className="py-6 max-w-7xl mx-auto">
-        {/* AI Alert Banner */}
-        <div className="mb-6 bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-lg p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-bold text-red-900 mb-1">
-                AI Early Warning: 3 Students Require Immediate Attention
-              </h3>
-              <p className="text-sm text-red-800">
-                Our predictive model has identified students showing multiple
-                dropout risk indicators. Review recommendations below.
-              </p>
-            </div>
-            <button className="text-red-600 hover:text-red-800 font-medium text-sm whitespace-nowrap">
-              View All →
-            </button>
-          </div>
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Available grades for dropdown
+  const availableGrades = dashboardData?.gradeBreakdown?.map((g) => g.grade) || [];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (isError || !dashboardData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Failed to load dashboard
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            {error instanceof Error ? error.message : "Something went wrong"}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const classStats = [
+    {
+      label: "Total Students",
+      value: dashboardData.totalStudents.toString(),
+      change: selectedGrade ? `in ${selectedGrade}` : "across all grades",
+      trend: "up" as const,
+      icon: <Users className="w-5 h-5" />,
+      color: "from-green-500 to-emerald-600",
+    },
+    {
+      label: "At Risk",
+      value: dashboardData.atRiskCount.toString(),
+      change: `${Math.round((dashboardData.atRiskCount / dashboardData.totalStudents) * 100)}% of students`,
+      trend: "up" as const,
+      icon: <AlertTriangle className="w-5 h-5" />,
+      color: "from-red-500 to-orange-600",
+    },
+    {
+      label: "Average Attendance",
+      value: `${dashboardData.averageAttendance}%`,
+      change: dashboardData.averageAttendance >= 90 ? "Excellent" : dashboardData.averageAttendance >= 80 ? "Good" : "Needs Improvement",
+      trend: dashboardData.averageAttendance >= 85 ? ("up" as const) : ("down" as const),
+      icon: <Calendar className="w-5 h-5" />,
+      color: "from-blue-500 to-cyan-600",
+    },
+    {
+      label: "Class Average",
+      value: `${dashboardData.classAverage}%`,
+      change: dashboardData.classAverage >= 75 ? "Above target" : "Below target",
+      trend: dashboardData.classAverage >= 75 ? ("up" as const) : ("down" as const),
+      icon: <Award className="w-5 h-5" />,
+      color: "from-purple-500 to-pink-600",
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <main className="py-6 max-w-7xl mx-auto px-4">
+        {/* Grade Filter */}
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-sm text-gray-600">
+              {selectedGrade || "All Grades"} Overview
+            </p>
+          </div>
+
+          {availableGrades.length > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => setShowGradeDropdown(!showGradeDropdown)}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <span className="text-sm font-medium text-gray-700">
+                  {selectedGrade || "All Grades"}
+                </span>
+                <ChevronDown className="w-4 h-4 text-gray-600" />
+              </button>
+
+              {showGradeDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  <button
+                    onClick={() => {
+                      setSelectedGrade("");
+                      setShowGradeDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg"
+                  >
+                    All Grades
+                  </button>
+                  {availableGrades.map((grade) => (
+                    <button
+                      key={grade}
+                      onClick={() => {
+                        setSelectedGrade(grade.replace("Grade ", ""));
+                        setShowGradeDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 last:rounded-b-lg"
+                    >
+                      {grade}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* AI Alert Banner */}
+        {dashboardData.atRiskCount > 0 && (
+          <div className="mb-6 bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-lg p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-bold text-red-900 mb-1">
+                  AI Early Warning: {dashboardData.atRiskCount} Student{dashboardData.atRiskCount > 1 ? 's' : ''} Require{dashboardData.atRiskCount === 1 ? 's' : ''} Immediate Attention
+                </h3>
+                <p className="text-sm text-red-800">
+                  Our predictive model has identified students showing multiple dropout risk indicators.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -573,35 +538,27 @@ const SkoolaSyncDashboard: React.FC = () => {
               className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-3">
-                <div
-                  className={`p-3 rounded-lg bg-gradient-to-br ${stat.color}`}
-                >
+                <div className={`p-3 rounded-lg bg-gradient-to-br ${stat.color}`}>
                   <div className="text-white">{stat.icon}</div>
                 </div>
                 {stat.trend === "up" ? (
                   <TrendingUp
-                    className={`w-4 h-4 ${
-                      stat.label === "At Risk"
-                        ? "text-red-500"
-                        : "text-green-500"
-                    }`}
+                    className={`w-4 h-4 ${stat.label === "At Risk" ? "text-red-500" : "text-green-500"
+                      }`}
                   />
                 ) : (
                   <TrendingDown className="w-4 h-4 text-red-500" />
                 )}
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                {stat.value}
-              </h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</h3>
               <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
               <p
-                className={`text-xs font-medium ${
-                  stat.trend === "up" && stat.label !== "At Risk"
+                className={`text-xs font-medium ${stat.trend === "up" && stat.label !== "At Risk"
                     ? "text-green-600"
                     : stat.trend === "up"
-                    ? "text-red-600"
-                    : "text-red-600"
-                }`}
+                      ? "text-red-600"
+                      : "text-red-600"
+                  }`}
               >
                 {stat.change}
               </p>
@@ -617,17 +574,22 @@ const SkoolaSyncDashboard: React.FC = () => {
               Attendance & Risk Trend
             </h2>
             <div className="h-64">
-              <AttendanceTrendChart />
+              <AttendanceTrendChart data={dashboardData.attendanceTrend} />
             </div>
           </div>
 
           {/* Dropout Risk Chart */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
-              Top 5 Students at Risk
+              Top {dashboardData.topAtRiskStudents.length} Students at Risk
             </h2>
             <div className="h-64">
-              <DropoutRiskChart />
+              <DropoutRiskChart
+                data={dashboardData.topAtRiskStudents.map((s) => ({
+                  name: s.name.split(" ")[0],
+                  dropoutRisk: s.dropoutRisk,
+                }))}
+              />
             </div>
           </div>
 
@@ -637,110 +599,136 @@ const SkoolaSyncDashboard: React.FC = () => {
               Class Performance Distribution
             </h2>
             <div className="h-64">
-              <PerformanceDistributionChart />
+              <PerformanceDistributionChart data={dashboardData.performanceDistribution} />
             </div>
           </div>
 
-          {/* Behavior Incidents */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              Behavioral Patterns (This Month)
-            </h2>
-            <div className="h-64">
-              <BehaviorIncidentsChart />
+          {/* Grade Breakdown (only if viewing all grades) */}
+          {!selectedGrade && dashboardData.gradeBreakdown.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Grade Breakdown</h2>
+              <div className="space-y-3">
+                {dashboardData.gradeBreakdown.map((grade, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() => setSelectedGrade(grade.grade.replace("Grade ", ""))}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-sm text-gray-900">{grade.grade}</h3>
+                        <span className="text-xs text-gray-600">
+                          {grade.studentCount} students
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-gray-600">
+                        <span>Avg: {grade.averagePerformance}%</span>
+                        <span className="text-red-600">At Risk: {grade.atRiskCount}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Students At Risk Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">
-              Students at Risk of Dropout
-            </h2>
-            <button className="text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-1">
-              View Full Report <ChevronRight className="w-4 h-4" />
-            </button>
+        {dashboardData.topAtRiskStudents.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">
+                Students at Risk of Dropout
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {dashboardData.topAtRiskStudents.map((student) => (
+                <div
+                  key={student.id}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      {student.avatar ? (
+                        <img
+                          src={student.avatar}
+                          alt={student.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold">
+                          {getInitials(student.name)}
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-bold text-gray-900">{student.name}</h3>
+                        <p className="text-xs text-gray-500">
+                          Attendance: {student.attendanceRate}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">
+                        Dropout Risk
+                      </span>
+                      <span
+                        className={`text-sm font-bold px-2 py-1 rounded ${getRiskColor(
+                          student.dropoutRisk
+                        )}`}
+                      >
+                        {student.dropoutRisk}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${student.dropoutRisk >= 70
+                            ? "bg-red-500"
+                            : student.dropoutRisk >= 60
+                              ? "bg-orange-500"
+                              : "bg-yellow-500"
+                          }`}
+                        style={{ width: `${student.dropoutRisk}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {getRiskLabel(student.dropoutRisk)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <p className="text-xs font-medium text-gray-700">Key Concerns:</p>
+                    {student.concerns.length > 0 ? (
+                      student.concerns.map((concern, idx) => (
+                        <div key={idx} className="flex items-start gap-2">
+                          <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs text-gray-600">{concern}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-gray-500">No specific concerns recorded</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button className="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all">
+                      Contact Parent
+                    </button>
+                    <button className="px-3 py-2 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                      Details
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {atRiskStudents.map((student) => (
-              <div
-                key={student.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-amber-500 flex items-center justify-center text-white font-bold">
-                      {student.avatar}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">
-                        {student.name}
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        {student.lastIncident}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">
-                      Dropout Risk
-                    </span>
-                    <span
-                      className={`text-sm font-bold px-2 py-1 rounded ${getRiskColor(
-                        student.dropoutRisk
-                      )}`}
-                    >
-                      {student.dropoutRisk}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        student.dropoutRisk >= 70
-                          ? "bg-red-500"
-                          : student.dropoutRisk >= 60
-                          ? "bg-orange-500"
-                          : "bg-yellow-500"
-                      }`}
-                      style={{ width: `${student.dropoutRisk}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {getRiskLabel(student.dropoutRisk)}
-                  </p>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <p className="text-xs font-medium text-gray-700">
-                    Key Concerns:
-                  </p>
-                  {student.concerns.map((concern, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-gray-600">{concern}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <button className="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-amber-500 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all">
-                    Contact Parent
-                  </button>
-                  <button className="px-3 py-2 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors">
-                    Details
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* AI Recommendations */}
+        {/* AI Recommendations (Mock Data) */}
         <div className="mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             AI-Powered Recommendations
@@ -753,26 +741,21 @@ const SkoolaSyncDashboard: React.FC = () => {
               >
                 <div className="flex items-start gap-4">
                   <div
-                    className={`p-2 rounded-lg ${
-                      rec.priority === "high" ? "bg-red-100" : "bg-orange-100"
-                    }`}
+                    className={`p-2 rounded-lg ${rec.priority === "high" ? "bg-red-100" : "bg-orange-100"
+                      }`}
                   >
                     <AlertTriangle
-                      className={`w-5 h-5 ${
-                        rec.priority === "high"
-                          ? "text-red-600"
-                          : "text-orange-600"
-                      }`}
+                      className={`w-5 h-5 ${rec.priority === "high" ? "text-red-600" : "text-orange-600"
+                        }`}
                     />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span
-                        className={`text-xs font-bold px-2 py-1 rounded ${
-                          rec.priority === "high"
+                        className={`text-xs font-bold px-2 py-1 rounded ${rec.priority === "high"
                             ? "bg-red-100 text-red-700"
                             : "bg-orange-100 text-orange-700"
-                        }`}
+                          }`}
                       >
                         {rec.priority.toUpperCase()} PRIORITY
                       </span>
@@ -791,84 +774,45 @@ const SkoolaSyncDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Actions & Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              Quick Actions
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <button className="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
-                <Calendar className="w-5 h-5 text-gray-600 group-hover:text-green-600" />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
-                  Record Attendance
-                </span>
-              </button>
-              <button className="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
-                <BookOpen className="w-5 h-5 text-gray-600 group-hover:text-green-600" />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
-                  Add Activity
-                </span>
-              </button>
-              <button className="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
-                <Activity className="w-5 h-5 text-gray-600 group-hover:text-green-600" />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
-                  Log Behavior
-                </span>
-              </button>
-              <button className="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
-                <MessageSquare className="w-5 h-5 text-gray-600 group-hover:text-green-600" />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
-                  Message Parent
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              Recent Activity
-            </h2>
-            <div className="space-y-3">
-              {recentActivities.map((activity, index) => (
+        {/* Recent Activity (Mock Data) */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
+          <div className="space-y-3">
+            {recentActivities.map((activity, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
                 <div
-                  key={index}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-                >
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      activity.type === "success"
-                        ? "bg-green-100"
-                        : activity.type === "warning"
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === "success"
+                      ? "bg-green-100"
+                      : activity.type === "warning"
                         ? "bg-orange-100"
                         : "bg-red-100"
                     }`}
-                  >
-                    {activity.type === "success" ? (
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    ) : activity.type === "warning" ? (
-                      <XCircle className="w-4 h-4 text-orange-600" />
-                    ) : (
-                      <Clock className="w-4 h-4 text-red-600" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {activity.student}
-                    </p>
-                    <p className="text-xs text-gray-600">{activity.activity}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-gray-900">
-                      {activity.score}
-                    </p>
-                    <p className="text-xs text-gray-500">{activity.time}</p>
-                  </div>
+                >
+                  {activity.type === "success" ? (
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  ) : activity.type === "warning" ? (
+                    <XCircle className="w-4 h-4 text-orange-600" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-red-600" />
+                  )}
                 </div>
-              ))}
-            </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {activity.student}
+                  </p>
+                  <p className="text-xs text-gray-600">{activity.activity}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-medium text-gray-900">
+                    {activity.score}
+                  </p>
+                  <p className="text-xs text-gray-500">{activity.time}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </main>
@@ -876,4 +820,4 @@ const SkoolaSyncDashboard: React.FC = () => {
   );
 };
 
-export default SkoolaSyncDashboard;
+export default Dashboard;
