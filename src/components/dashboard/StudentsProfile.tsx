@@ -21,9 +21,34 @@ import {
   Edit,
   MoreVertical,
   Loader2,
+  Send,
+  Sparkles,
+  Bot,
+  Users,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useStudentDetail } from "@/hooks/user/useStudentDetails";
+
+interface Recommendation {
+  id: string;
+  author: {
+    name: string;
+    role: string;
+    avatar?: string;
+  };
+  content: string;
+  createdAt: string;
+  replies?: Array<{
+    id: string;
+    author: {
+      name: string;
+      role: string;
+      avatar?: string;
+    };
+    content: string;
+    createdAt: string;
+  }>;
+}
 
 const StudentDetailPage: React.FC = () => {
   const params = useParams();
@@ -32,11 +57,41 @@ const StudentDetailPage: React.FC = () => {
 
   const { data: student, isLoading, isError, error } = useStudentDetail(studentId);
 
-  const [activeTab, setActiveTab] = useState<"overview" | "progress">("overview");
+  const [newComment, setNewComment] = useState("");
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [showAIInsights, setShowAIInsights] = useState(false);
+
   const attendanceChartRef = useRef<HTMLCanvasElement | null>(null);
   const performanceChartRef = useRef<HTMLCanvasElement | null>(null);
   const attendanceChartInstance = useRef<Chart | null>(null);
   const performanceChartInstance = useRef<Chart | null>(null);
+
+  // Mock recommendations data - Replace with actual API call
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([
+    {
+      id: "1",
+      author: {
+        name: "Mrs. Johnson",
+        role: "Math Teacher",
+        avatar: "",
+      },
+      content: "Great improvement in algebra this term! Keep up the good work with homework consistency.",
+      createdAt: "2024-11-08T10:30:00Z",
+      replies: [
+        {
+          id: "r1",
+          author: {
+            name: "Mrs. Kalisa",
+            role: "Parent",
+            avatar: "",
+          },
+          content: "Thank you for the feedback! We'll continue to support at home.",
+          createdAt: "2024-11-09T14:20:00Z",
+        },
+      ],
+    },
+  ]);
 
   useEffect(() => {
     if (!student) return;
@@ -49,8 +104,7 @@ const StudentDetailPage: React.FC = () => {
           attendanceChartInstance.current.destroy();
         }
 
-        // Calculate weekly attendance trend
-        const attendanceData = calculateWeeklyAttendance(student.attendanceHistory);
+        const attendanceData = calculateDailyAttendance(student.attendanceHistory);
 
         attendanceChartInstance.current = new Chart(ctx, {
           type: "line",
@@ -58,15 +112,16 @@ const StudentDetailPage: React.FC = () => {
             labels: attendanceData.labels,
             datasets: [
               {
-                label: "Attendance %",
+                label: "Attendance",
                 data: attendanceData.values,
                 borderColor: "#10b981",
                 backgroundColor: "rgba(16, 185, 129, 0.1)",
-                borderWidth: 3,
+                borderWidth: 2,
                 fill: true,
-                tension: 0.4,
-                pointRadius: 5,
+                tension: 0.1,
+                pointRadius: 3,
                 pointBackgroundColor: "#10b981",
+                spanGaps: true,
               },
             ],
           },
@@ -78,17 +133,37 @@ const StudentDetailPage: React.FC = () => {
               tooltip: {
                 backgroundColor: "rgba(0, 0, 0, 0.8)",
                 padding: 12,
+                callbacks: {
+                  label: function (context) {
+                    if (context.parsed.y === 100) return "Present";
+                    if (context.parsed.y === 0) return "Absent";
+                    return "No Data";
+                  },
+                },
               },
             },
             scales: {
               y: {
-                beginAtZero: false,
-                min: 0,
+                beginAtZero: true,
                 max: 100,
+                ticks: {
+                  callback: function (value) {
+                    if (value === 100) return "Present";
+                    if (value === 0) return "Absent";
+                    return "";
+                  },
+                },
                 grid: { color: "rgba(0, 0, 0, 0.05)" },
               },
               x: {
                 grid: { display: false },
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 45,
+                  font: {
+                    size: 10,
+                  },
+                },
               },
             },
           },
@@ -104,26 +179,30 @@ const StudentDetailPage: React.FC = () => {
           performanceChartInstance.current.destroy();
         }
 
-        // Get courses with performance data
         const coursesWithPerformance = student.courses
-          .filter((c) => c.performance?.total !== null)
-          .slice(0, 5);
+          .filter((c) => c.performance?.total !== null && c.performance?.total !== undefined)
+          .slice(0, 8);
 
         performanceChartInstance.current = new Chart(ctx, {
           type: "bar",
           data: {
-            labels: coursesWithPerformance.map((c) => c.subject || c.title.substring(0, 10)),
+            labels: coursesWithPerformance.map((c) => {
+              const title = c.title.length > 15 ? c.title.substring(0, 15) + "..." : c.title;
+              return title;
+            }),
             datasets: [
               {
-                label: "Score",
+                label: "Total Score",
                 data: coursesWithPerformance.map((c) => c.performance?.total || 0),
                 backgroundColor: coursesWithPerformance.map((c) => {
                   const score = c.performance?.total || 0;
                   return score >= 85
                     ? "#10b981"
                     : score >= 70
-                      ? "#3b82f6"
-                      : "#f59e0b";
+                    ? "#3b82f6"
+                    : score >= 50
+                    ? "#f59e0b"
+                    : "#ef4444";
                 }),
                 borderWidth: 0,
                 borderRadius: 8,
@@ -138,6 +217,15 @@ const StudentDetailPage: React.FC = () => {
               tooltip: {
                 backgroundColor: "rgba(0, 0, 0, 0.8)",
                 padding: 12,
+                callbacks: {
+                  title: function (context) {
+                    const course = coursesWithPerformance[context[0].dataIndex];
+                    return course.title;
+                  },
+                  label: function (context) {
+                    return `Total: ${context.parsed.y}%`;
+                  },
+                },
               },
             },
             scales: {
@@ -145,9 +233,21 @@ const StudentDetailPage: React.FC = () => {
                 beginAtZero: true,
                 max: 100,
                 grid: { color: "rgba(0, 0, 0, 0.05)" },
+                ticks: {
+                  callback: function (value) {
+                    return value + "%";
+                  },
+                },
               },
               x: {
                 grid: { display: false },
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 45,
+                  font: {
+                    size: 10,
+                  },
+                },
               },
             },
           },
@@ -165,34 +265,45 @@ const StudentDetailPage: React.FC = () => {
     };
   }, [student]);
 
-  // Helper function to calculate weekly attendance
-  const calculateWeeklyAttendance = (history: any[]) => {
-    const weeks = 5;
+  const calculateDailyAttendance = (history: any[]) => {
+    const days = 30;
     const labels = [];
     const values = [];
 
-    for (let i = weeks - 1; i >= 0; i--) {
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - i * 7);
-      const weekEnd = new Date();
-      weekEnd.setDate(weekEnd.getDate() - (i - 1) * 7);
+    const attendanceMap = new Map();
+    history.forEach((a) => {
+      const dateStr = new Date(a.date).toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "short",
+      });
+      attendanceMap.set(dateStr, a.status);
+    });
 
-      const weekAttendance = history.filter((a) => {
-        const date = new Date(a.date);
-        return date >= weekStart && date < weekEnd;
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "short",
       });
 
-      const presentCount = weekAttendance.filter(
-        (a) => a.status === "present" || a.status === "late"
-      ).length;
+      const status = attendanceMap.get(dateStr);
+      let value = 0;
 
-      const rate =
-        weekAttendance.length > 0
-          ? (presentCount / weekAttendance.length) * 100
-          : 0;
+      if (status === "present" || status === "late") {
+        value = 100;
+      } else if (status === "absent") {
+        value = 0;
+      } else {
+        value = 0;
+      }
 
-      labels.push(i === 0 ? "Current" : `Week ${weeks - i}`);
-      values.push(Math.round(rate));
+      if (i % 3 === 0 || i === 0) {
+        labels.push(dateStr);
+      } else {
+        labels.push("");
+      }
+      values.push(value);
     }
 
     return { labels, values };
@@ -238,10 +349,141 @@ const StudentDetailPage: React.FC = () => {
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
     if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
     if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
     return "Just now";
+  };
+
+  const handlePostComment = () => {
+    if (!newComment.trim()) return;
+
+    // TODO: Replace with actual API call
+    const newRecommendation: Recommendation = {
+      id: Date.now().toString(),
+      author: {
+        name: "Current User", // Replace with actual user data
+        role: "Teacher",
+        avatar: "",
+      },
+      content: newComment,
+      createdAt: new Date().toISOString(),
+      replies: [],
+    };
+
+    setRecommendations([newRecommendation, ...recommendations]);
+    setNewComment("");
+  };
+
+  const handlePostReply = (recommendationId: string) => {
+    if (!replyContent.trim()) return;
+
+    // TODO: Replace with actual API call
+    setRecommendations(
+      recommendations.map((rec) => {
+        if (rec.id === recommendationId) {
+          return {
+            ...rec,
+            replies: [
+              ...(rec.replies || []),
+              {
+                id: Date.now().toString(),
+                author: {
+                  name: "Current User",
+                  role: "Parent",
+                  avatar: "",
+                },
+                content: replyContent,
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          };
+        }
+        return rec;
+      })
+    );
+
+    setReplyContent("");
+    setReplyingTo(null);
+  };
+
+  const generateAIInsights = () => {
+    if (!student) return null;
+
+    const insights = [];
+
+    // Attendance Insight
+    if (student.stats.attendanceRate >= 95) {
+      insights.push({
+        type: "positive",
+        icon: <CheckCircle className="w-5 h-5" />,
+        title: "Excellent Attendance",
+        description: `${student.firstName} maintains an outstanding attendance rate of ${student.stats.attendanceRate}%. This consistency is a strong foundation for academic success.`,
+      });
+    } else if (student.stats.attendanceRate < 80) {
+      insights.push({
+        type: "warning",
+        icon: <AlertTriangle className="w-5 h-5" />,
+        title: "Attendance Concern",
+        description: `Attendance rate of ${student.stats.attendanceRate}% is below target. Consider scheduling a parent meeting to address barriers to regular attendance.`,
+      });
+    }
+
+    // Performance Insight
+    if (student.stats.performanceScore >= 85) {
+      insights.push({
+        type: "positive",
+        icon: <Award className="w-5 h-5" />,
+        title: "Strong Academic Performance",
+        description: `${student.firstName} excels academically with a ${student.stats.performanceScore}% average. Consider enrichment opportunities or advanced coursework.`,
+      });
+    } else if (student.stats.performanceScore < 70) {
+      insights.push({
+        type: "warning",
+        icon: <BookOpen className="w-5 h-5" />,
+        title: "Academic Support Needed",
+        description: `Performance average of ${student.stats.performanceScore}% suggests need for additional support. Recommend tutoring or study group participation.`,
+      });
+    }
+
+    // Dropout Risk Insight
+    if (student.stats.dropoutRisk >= 50) {
+      insights.push({
+        type: "critical",
+        icon: <AlertTriangle className="w-5 h-5" />,
+        title: "Intervention Required",
+        description: `Dropout risk of ${student.stats.dropoutRisk}% requires immediate intervention. Schedule parent conference and develop personalized support plan.`,
+      });
+    }
+
+    // Course-Specific Insights
+    const weakCourses = student.courses.filter(
+      (c) => c.performance && c.performance.total && c.performance.total < 70
+    );
+    if (weakCourses.length > 0) {
+      insights.push({
+        type: "info",
+        icon: <TrendingDown className="w-5 h-5" />,
+        title: "Subject-Specific Support",
+        description: `${student.firstName} is struggling in ${weakCourses.length} course${
+          weakCourses.length > 1 ? "s" : ""
+        }: ${weakCourses.map((c) => c.title).join(", ")}. Target these areas for improvement.`,
+      });
+    }
+
+    // Engagement Insight
+    if (student.stats.currentStreak >= 7) {
+      insights.push({
+        type: "positive",
+        icon: <Sparkles className="w-5 h-5" />,
+        title: "High Engagement",
+        description: `${student.stats.currentStreak}-day active streak shows strong engagement. Recognize this achievement publicly to encourage continued participation.`,
+      });
+    }
+
+    return insights;
   };
 
   if (isLoading) {
@@ -260,9 +502,7 @@ const StudentDetailPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Failed to load student
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load student</h3>
           <p className="text-sm text-gray-600 mb-4">
             {error instanceof Error ? error.message : "Student not found"}
           </p>
@@ -282,10 +522,12 @@ const StudentDetailPage: React.FC = () => {
     student.stats.dropoutRisk >= 70
       ? "critical"
       : student.stats.dropoutRisk >= 50
-        ? "warning"
-        : student.stats.dropoutRisk >= 30
-          ? "good"
-          : "excellent";
+      ? "warning"
+      : student.stats.dropoutRisk >= 30
+      ? "good"
+      : "excellent";
+
+  const aiInsights = generateAIInsights();
 
   return (
     <div className="min-h-screen">
@@ -299,12 +541,8 @@ const StudentDetailPage: React.FC = () => {
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
           <div className="flex-1">
-            <h1 className="text-1xl font-bold text-gray-900">
-              Student Profile
-            </h1>
-            <p className="text-sm text-gray-600">
-              View and manage student information
-            </p>
+            <h1 className="text-xl font-bold text-gray-900">Student Profile</h1>
+            <p className="text-sm text-gray-600">View and manage student information</p>
           </div>
           <div className="flex gap-2">
             <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
@@ -350,9 +588,7 @@ const StudentDetailPage: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                    {student.fullName}
-                  </h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-1">{student.fullName}</h2>
                   <p className="text-gray-600">{student.grade}</p>
                   <p className="text-sm text-gray-500">
                     {student.userName && `@${student.userName}`}
@@ -366,9 +602,7 @@ const StudentDetailPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Contact Info */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                    Contact Information
-                  </h3>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Contact Information</h3>
                   {student.email && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Mail className="w-4 h-4 text-green-600" />
@@ -391,9 +625,7 @@ const StudentDetailPage: React.FC = () => {
 
                 {/* Parent Info */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                    Parent/Guardian
-                  </h3>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Parent/Guardian</h3>
                   {student.parent ? (
                     <>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -416,9 +648,7 @@ const StudentDetailPage: React.FC = () => {
                       )}
                     </>
                   ) : (
-                    <p className="text-sm text-gray-500">
-                      No parent information available
-                    </p>
+                    <p className="text-sm text-gray-500">No parent information available</p>
                   )}
                 </div>
               </div>
@@ -433,9 +663,7 @@ const StudentDetailPage: React.FC = () => {
               <p className="text-xs text-gray-600">Attendance Rate</p>
               <TrendingUp className="w-4 h-4 text-green-600" />
             </div>
-            <p className="text-2xl font-bold text-green-600">
-              {student.stats.attendanceRate}%
-            </p>
+            <p className="text-2xl font-bold text-green-600">{student.stats.attendanceRate}%</p>
             <p className="text-xs text-gray-500 mt-1">
               Last activity: {getTimeAgo(student.stats.lastActivity)}
             </p>
@@ -446,9 +674,7 @@ const StudentDetailPage: React.FC = () => {
               <p className="text-xs text-gray-600">Performance Score</p>
               <Award className="w-4 h-4 text-blue-600" />
             </div>
-            <p className="text-2xl font-bold text-blue-600">
-              {student.stats.performanceScore}%
-            </p>
+            <p className="text-2xl font-bold text-blue-600">{student.stats.performanceScore}%</p>
             <p className="text-xs text-gray-500 mt-1">
               {student.stats.totalCourses} courses enrolled
             </p>
@@ -459,9 +685,7 @@ const StudentDetailPage: React.FC = () => {
               <p className="text-xs text-gray-600">Total Stars</p>
               <CheckCircle className="w-4 h-4 text-purple-600" />
             </div>
-            <p className="text-2xl font-bold text-purple-600">
-              {student.stats.totalStars}
-            </p>
+            <p className="text-2xl font-bold text-purple-600">{student.stats.totalStars}</p>
             <p className="text-xs text-gray-500 mt-1">
               Current streak: {student.stats.currentStreak} days
             </p>
@@ -471,21 +695,23 @@ const StudentDetailPage: React.FC = () => {
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-gray-600">Dropout Risk</p>
               <AlertTriangle
-                className={`w-4 h-4 ${student.stats.dropoutRisk >= 70
-                  ? "text-red-600"
-                  : student.stats.dropoutRisk >= 50
+                className={`w-4 h-4 ${
+                  student.stats.dropoutRisk >= 70
+                    ? "text-red-600"
+                    : student.stats.dropoutRisk >= 50
                     ? "text-orange-600"
                     : "text-green-600"
-                  }`}
+                }`}
               />
             </div>
             <p
-              className={`text-2xl font-bold ${student.stats.dropoutRisk >= 70
-                ? "text-red-600"
-                : student.stats.dropoutRisk >= 50
+              className={`text-2xl font-bold ${
+                student.stats.dropoutRisk >= 70
+                  ? "text-red-600"
+                  : student.stats.dropoutRisk >= 50
                   ? "text-orange-600"
                   : "text-green-600"
-                }`}
+              }`}
             >
               {student.stats.dropoutRisk}%
             </p>
@@ -493,336 +719,493 @@ const StudentDetailPage: React.FC = () => {
               {student.stats.dropoutRisk < 30
                 ? "Low risk level"
                 : student.stats.dropoutRisk < 50
-                  ? "Medium risk level"
-                  : student.stats.dropoutRisk < 70
-                    ? "High risk level"
-                    : "Critical risk level"}
+                ? "Medium risk level"
+                : student.stats.dropoutRisk < 70
+                ? "High risk level"
+                : "Critical risk level"}
             </p>
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* AI Insights Section */}
+        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">AI Insights</h3>
+                <p className="text-sm text-gray-600">Personalized recommendations powered by AI</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAIInsights(!showAIInsights)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors text-sm font-medium text-purple-700"
+            >
+              <Sparkles className="w-4 h-4" />
+              {showAIInsights ? "Hide" : "Show"} Insights
+            </button>
+          </div>
+
+          {showAIInsights && aiInsights && (
+            <div className="space-y-3 mt-4">
+              {aiInsights.map((insight, index) => (
+                <div
+                  key={index}
+                  className={`p-4 rounded-lg border ${
+                    insight.type === "positive"
+                      ? "bg-green-50 border-green-200"
+                      : insight.type === "warning"
+                      ? "bg-orange-50 border-orange-200"
+                      : insight.type === "critical"
+                      ? "bg-red-50 border-red-200"
+                      : "bg-blue-50 border-blue-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 ${
+                        insight.type === "positive"
+                          ? "text-green-600"
+                          : insight.type === "warning"
+                          ? "text-orange-600"
+                          : insight.type === "critical"
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    >
+                      {insight.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h4
+                        className={`font-semibold text-sm mb-1 ${
+                          insight.type === "positive"
+                            ? "text-green-900"
+                            : insight.type === "warning"
+                            ? "text-orange-900"
+                            : insight.type === "critical"
+                            ? "text-red-900"
+                            : "text-blue-900"
+                        }`}
+                      >
+                        {insight.title}
+                      </h4>
+                      <p
+                        className={`text-sm ${
+                          insight.type === "positive"
+                            ? "text-green-700"
+                            : insight.type === "warning"
+                            ? "text-orange-700"
+                            : insight.type === "critical"
+                            ? "text-red-700"
+                            : "text-blue-700"
+                        }`}
+                      >
+                        {insight.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Main Content */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-          <div className="border-b border-gray-200">
-            <div className="flex gap-4 px-6">
-              <button
-                onClick={() => setActiveTab("overview")}
-                className={`py-4 px-2 font-medium text-sm border-b-2 transition-colors ${activeTab === "overview"
-                  ? "border-green-500 text-green-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab("progress")}
-                className={`py-4 px-2 font-medium text-sm border-b-2 transition-colors ${activeTab === "progress"
-                  ? "border-green-500 text-green-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-              >
-                Progress
-              </button>
+          <div className="p-6">
+            <div className="space-y-6">
+              {/* Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Attendance Trend</h3>
+                  <div className="h-64">
+                    <canvas ref={attendanceChartRef} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Course Performance</h3>
+                  <div className="h-64">
+                    <canvas ref={performanceChartRef} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Details Table */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Detailed Performance Scores
+                </h3>
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="text-left p-3 text-xs font-semibold text-gray-700">
+                            Course
+                          </th>
+                          <th className="text-center p-3 text-xs font-semibold text-gray-700">
+                            Assignment 1
+                          </th>
+                          <th className="text-center p-3 text-xs font-semibold text-gray-700">
+                            Assignment 2
+                          </th>
+                          <th className="text-center p-3 text-xs font-semibold text-gray-700">
+                            CAT
+                          </th>
+                          <th className="text-center p-3 text-xs font-semibold text-gray-700">
+                            Exam
+                          </th>
+                          <th className="text-center p-3 text-xs font-semibold text-gray-700">
+                            Total
+                          </th>
+                          <th className="text-center p-3 text-xs font-semibold text-gray-700">
+                            Grade
+                          </th>
+                          <th className="text-left p-3 text-xs font-semibold text-gray-700">
+                            Remarks
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {student.courses.map((course) => {
+                          const perf = course.performance;
+                          const hasData = perf !== null;
+
+                          return (
+                            <tr key={course.id} className="hover:bg-gray-50">
+                              <td className="p-3">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {course.title}
+                                  </p>
+                                  <p className="text-xs text-gray-500">{course.subject}</p>
+                                </div>
+                              </td>
+                              <td className="p-3 text-center text-sm text-gray-700">
+                                {hasData && perf.assignment1 !== null ? (
+                                  <span
+                                    className={`font-medium ${
+                                      perf.assignment1 >= 85
+                                        ? "text-green-600"
+                                        : perf.assignment1 >= 70
+                                        ? "text-blue-600"
+                                        : "text-orange-600"
+                                    }`}
+                                  >
+                                    {perf.assignment1}%
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center text-sm text-gray-700">
+                                {hasData && perf.assignment2 !== null ? (
+                                  <span
+                                    className={`font-medium ${
+                                      perf.assignment2 >= 85
+                                        ? "text-green-600"
+                                        : perf.assignment2 >= 70
+                                        ? "text-blue-600"
+                                        : "text-orange-600"
+                                    }`}
+                                  >
+                                    {perf.assignment2}%
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center text-sm text-gray-700">
+                                {hasData && perf.cat !== null ? (
+                                  <span
+                                    className={`font-medium ${
+                                      perf.cat >= 85
+                                        ? "text-green-600"
+                                        : perf.cat >= 70
+                                        ? "text-blue-600"
+                                        : "text-orange-600"
+                                    }`}
+                                  >
+                                    {perf.cat}%
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center text-sm text-gray-700">
+                                {hasData && perf.exam !== null ? (
+                                  <span
+                                    className={`font-medium ${
+                                      perf.exam >= 85
+                                        ? "text-green-600"
+                                        : perf.exam >= 70
+                                        ? "text-blue-600"
+                                        : "text-orange-600"
+                                    }`}
+                                  >
+                                    {perf.exam}%
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center">
+                                {hasData && perf.total !== null ? (
+                                  <span
+                                    className={`font-bold text-sm ${
+                                      perf.total >= 85
+                                        ? "text-green-600"
+                                        : perf.total >= 70
+                                        ? "text-blue-600"
+                                        : "text-orange-600"
+                                    }`}
+                                  >
+                                    {perf.total}%
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-center">
+                                {hasData && perf.grade ? (
+                                  <span
+                                    className={`px-2 py-1 text-xs font-bold rounded ${
+                                      perf.total && perf.total >= 85
+                                        ? "bg-green-100 text-green-700"
+                                        : perf.total && perf.total >= 70
+                                        ? "bg-blue-100 text-blue-700"
+                                        : "bg-orange-100 text-orange-700"
+                                    }`}
+                                  >
+                                    {perf.grade}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-sm text-gray-600">
+                                {hasData && perf.remarks ? (
+                                  <span className="text-xs">{perf.remarks}</span>
+                                ) : (
+                                  <span className="text-gray-400 text-xs">No remarks</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Courses Breakdown */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Courses & Performance</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {student.courses.map((course) => {
+                    const hasPerformance = course.performance !== null;
+                    const score = course.performance?.total || 0;
+                    const grade = course.performance?.grade || "N/A";
+
+                    return (
+                      <div
+                        key={course.id}
+                        className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-sm text-gray-900">{course.title}</h4>
+                          {hasPerformance && (
+                            <span
+                              className={`text-xs font-bold px-2 py-1 rounded ${
+                                score >= 85
+                                  ? "bg-green-100 text-green-700"
+                                  : score >= 70
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-orange-100 text-orange-700"
+                              }`}
+                            >
+                              {grade}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 mb-2">{course.subject}</p>
+                        {hasPerformance ? (
+                          <>
+                            <div className="flex items-end gap-2 mb-2">
+                              <p className="text-2xl font-bold text-gray-900">{score}%</p>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full ${
+                                  score >= 85
+                                    ? "bg-green-500"
+                                    : score >= 70
+                                    ? "bg-blue-500"
+                                    : "bg-orange-500"
+                                }`}
+                                style={{ width: `${score}%` }}
+                              />
+                            </div>
+                            {course.performance?.remarks && (
+                              <p className="text-xs text-gray-600 mt-2">
+                                {course.performance.remarks}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-500">No performance data yet</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recommendations & Comments Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Recommendations & Comments</h3>
+              <p className="text-sm text-gray-600">
+                Teachers and parents can share feedback and recommendations
+              </p>
             </div>
           </div>
 
-          {/* Tab Content */}
-          <div className="p-6">
-            {activeTab === "overview" && (
-              <div className="space-y-6">
-                {/* Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
-                      Attendance Trend
-                    </h3>
-                    <div className="h-64">
-                      <canvas ref={attendanceChartRef} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
-                      Course Performance
-                    </h3>
-                    <div className="h-64">
-                      <canvas ref={performanceChartRef} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Courses Breakdown */}
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    Courses & Performance
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {student.courses.map((course) => {
-                      const hasPerformance = course.performance !== null;
-                      const score = course.performance?.total || 0;
-                      const grade = course.performance?.grade || "N/A";
-
-                      return (
-                        <div
-                          key={course.id}
-                          className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-sm text-gray-900">
-                              {course.title}
-                            </h4>
-                            {hasPerformance && (
-                              <span
-                                className={`text-xs font-bold px-2 py-1 rounded ${score >= 85
-                                  ? "bg-green-100 text-green-700"
-                                  : score >= 70
-                                    ? "bg-blue-100 text-blue-700"
-                                    : "bg-orange-100 text-orange-700"
-                                  }`}
-                              >
-                                {grade}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-600 mb-2">
-                            {course.subject}
-                          </p>
-                          {hasPerformance ? (
-                            <>
-                              <div className="flex items-end gap-2 mb-2">
-                                <p className="text-2xl font-bold text-gray-900">
-                                  {score}%
-                                </p>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className={`h-2 rounded-full ${score >= 85
-                                    ? "bg-green-500"
-                                    : score >= 70
-                                      ? "bg-blue-500"
-                                      : "bg-orange-500"
-                                    }`}
-                                  style={{ width: `${score}%` }}
-                                />
-                              </div>
-                              {course.performance?.remarks && (
-                                <p className="text-xs text-gray-600 mt-2">
-                                  {course.performance.remarks}
-                                </p>
-                              )}
-                            </>
-                          ) : (
-                            <p className="text-sm text-gray-500">
-                              No performance data yet
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+          {/* New Comment Input */}
+          <div className="mb-6">
+            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your feedback, recommendations, or observations about the student..."
+                className="w-full min-h-[100px] p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-xs text-gray-500">
+                  Your comment will be visible to teachers and parents
+                </p>
+                <button
+                  onClick={handlePostComment}
+                  disabled={!newComment.trim()}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  <Send className="w-4 h-4" />
+                  Post Comment
+                </button>
               </div>
-            )}
+            </div>
+          </div>
 
-            {activeTab === "progress" && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    Academic Progress
-                  </h3>
-                  <div
-                    className={`border rounded-xl p-6 ${student.stats.performanceScore >= 80
-                      ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
-                      : student.stats.performanceScore >= 60
-                        ? "bg-gradient-to-r from-blue-50 to-sky-50 border-blue-200"
-                        : "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200"
-                      }`}
-                  >
-                    <div className="flex items-center gap-4 mb-4">
-                      <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center ${student.stats.performanceScore >= 80
-                          ? "bg-green-500"
-                          : student.stats.performanceScore >= 60
-                            ? "bg-blue-500"
-                            : "bg-orange-500"
-                          }`}
-                      >
-                        <TrendingUp className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h4
-                          className={`font-bold ${student.stats.performanceScore >= 80
-                            ? "text-green-900"
-                            : student.stats.performanceScore >= 60
-                              ? "text-blue-900"
-                              : "text-orange-900"
-                            }`}
-                        >
-                          {student.stats.performanceScore >= 80
-                            ? "Strong Academic Performance"
-                            : student.stats.performanceScore >= 60
-                              ? "Good Academic Progress"
-                              : "Needs Improvement"}
-                        </h4>
-                        <p
-                          className={`text-sm ${student.stats.performanceScore >= 80
-                            ? "text-green-700"
-                            : student.stats.performanceScore >= 60
-                              ? "text-blue-700"
-                              : "text-orange-700"
-                            }`}
-                        >
-                          {student.stats.performanceScore >= 80
-                            ? "Student is excelling in most subjects"
-                            : student.stats.performanceScore >= 60
-                              ? "Student is making steady progress"
-                              : "Student may need additional support"}
-                        </p>
-                      </div>
+          {/* Comments List */}
+          <div className="space-y-4">
+            {recommendations.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 text-sm">
+                  No recommendations yet. Be the first to share feedback!
+                </p>
+              </div>
+            ) : (
+              recommendations.map((rec) => (
+                <div
+                  key={rec.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      {getInitials(rec.author.name)}
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <p
-                          className={`text-sm mb-1 ${student.stats.performanceScore >= 80
-                            ? "text-green-700"
-                            : student.stats.performanceScore >= 60
-                              ? "text-blue-700"
-                              : "text-orange-700"
-                            }`}
-                        >
-                          Performance
-                        </p>
-                        <p
-                          className={`text-2xl font-bold ${student.stats.performanceScore >= 80
-                            ? "text-green-900"
-                            : student.stats.performanceScore >= 60
-                              ? "text-blue-900"
-                              : "text-orange-900"
-                            }`}
-                        >
-                          {student.stats.performanceScore}%
-                        </p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-sm text-gray-900">{rec.author.name}</h4>
+                        <span className="text-xs text-gray-500">• {rec.author.role}</span>
+                        <span className="text-xs text-gray-400">• {getTimeAgo(rec.createdAt)}</span>
                       </div>
-                      <div>
-                        <p
-                          className={`text-sm mb-1 ${student.stats.performanceScore >= 80
-                            ? "text-green-700"
-                            : student.stats.performanceScore >= 60
-                              ? "text-blue-700"
-                              : "text-orange-700"
-                            }`}
-                        >
-                          Total Courses
-                        </p>
-                        <p
-                          className={`text-2xl font-bold ${student.stats.performanceScore >= 80
-                            ? "text-green-900"
-                            : student.stats.performanceScore >= 60
-                              ? "text-blue-900"
-                              : "text-orange-900"
-                            }`}
-                        >
-                          {student.stats.totalCourses}
-                        </p>
-                      </div>
-                      <div>
-                        <p
-                          className={`text-sm mb-1 ${student.stats.performanceScore >= 80
-                            ? "text-green-700"
-                            : student.stats.performanceScore >= 60
-                              ? "text-blue-700"
-                              : "text-orange-700"
-                            }`}
-                        >
-                          Total Stars
-                        </p>
-                        <p
-                          className={`text-2xl font-bold ${student.stats.performanceScore >= 80
-                            ? "text-green-900"
-                            : student.stats.performanceScore >= 60
-                              ? "text-blue-900"
-                              : "text-orange-900"
-                            }`}
-                        >
-                          {student.stats.totalStars}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      <p className="text-sm text-gray-700 mb-3">{rec.content}</p>
 
-                {/* Areas of Improvement */}
-                {student.stats.performanceScore < 70 && (
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
-                      Areas of Improvement
-                    </h3>
-                    <div className="space-y-3">
-                      {student.courses
-                        .filter((c) => c.performance && c.performance.total && c.performance.total < 70)
-                        .map((course) => (
-                          <div
-                            key={course.id}
-                            className="bg-orange-50 border border-orange-200 rounded-lg p-4"
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <AlertTriangle className="w-4 h-4 text-orange-600" />
-                              <h4 className="font-semibold text-sm text-orange-900">
-                                {course.title} - {course.performance?.total}%
-                              </h4>
+                      {/* Replies */}
+                      {rec.replies && rec.replies.length > 0 && (
+                        <div className="space-y-3 ml-4 border-l-2 border-gray-200 pl-4 mb-3">
+                          {rec.replies.map((reply) => (
+                            <div key={reply.id} className="flex items-start gap-2">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                {getInitials(reply.author.name)}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h5 className="font-medium text-xs text-gray-900">
+                                    {reply.author.name}
+                                  </h5>
+                                  <span className="text-xs text-gray-500">• {reply.author.role}</span>
+                                  <span className="text-xs text-gray-400">
+                                    • {getTimeAgo(reply.createdAt)}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-700">{reply.content}</p>
+                              </div>
                             </div>
-                            <p className="text-sm text-orange-700">
-                              Consider additional support to improve understanding
-                            </p>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Reply Input */}
+                      {replyingTo === rec.id ? (
+                        <div className="ml-4 mt-3">
+                          <textarea
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            placeholder="Write your reply..."
+                            className="w-full min-h-[80px] p-2 border border-gray-300 rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          />
+                          <div className="flex items-center gap-2 mt-2">
+                            <button
+                              onClick={() => handlePostReply(rec.id)}
+                              disabled={!replyContent.trim()}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            >
+                              <Send className="w-3 h-3" />
+                              Reply
+                            </button>
+                            <button
+                              onClick={() => {
+                                setReplyingTo(null);
+                                setReplyContent("");
+                              }}
+                              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                            >
+                              Cancel
+                            </button>
                           </div>
-                        ))}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setReplyingTo(rec.id)}
+                          className="text-sm text-green-600 hover:text-green-700 font-medium"
+                        >
+                          Reply
+                        </button>
+                      )}
                     </div>
                   </div>
-                )}
-
-                {/* Achievements */}
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    Achievements
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {student.stats.attendanceRate >= 95 && (
-                      <div className="flex items-center gap-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                        <Award className="w-8 h-8 text-purple-600" />
-                        <div>
-                          <h4 className="font-semibold text-sm text-purple-900">
-                            Excellent Attendance
-                          </h4>
-                          <p className="text-xs text-purple-700">
-                            {student.stats.attendanceRate}% attendance rate
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    {student.stats.currentStreak >= 7 && (
-                      <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <BookOpen className="w-8 h-8 text-blue-600" />
-                        <div>
-                          <h4 className="font-semibold text-sm text-blue-900">
-                            Active Learner
-                          </h4>
-                          <p className="text-xs text-blue-700">
-                            {student.stats.currentStreak} day streak
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </div>
+              ))
             )}
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Quick Actions
-          </h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
               <MessageSquare className="w-6 h-6 text-gray-600 group-hover:text-green-600" />

@@ -590,7 +590,7 @@ const StudentsPage: React.FC = () => {
                               </div>
                             </div>
                           </td>
-                          <td className="p-4 text-sm text-gray-700">
+                          <td className="p-4 text-xs text-gray-700">
                             {student.grade || "Not Assigned"}
                           </td>
                           <td className="p-4">

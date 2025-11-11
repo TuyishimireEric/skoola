@@ -5,11 +5,11 @@ import {
     ParentStudent,
     Attendance,
     CoursePerformance,
+    Course,
     StudentGame,
-    Game,
 } from "@/server/db/schema";
 import { getAge } from "@/utils/functions";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, gte } from "drizzle-orm";
 
 export interface StudentDetailResponse {
     id: string;
@@ -74,6 +74,11 @@ export async function getStudentDetail(
     today.setHours(0, 0, 0, 0);
     const todayISO = today.toISOString();
 
+    // Get date 30 days ago for attendance history
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
     // Fetch student basic info with parent details
     const studentResult = await db
         .select({
@@ -129,7 +134,7 @@ export async function getStudentDetail(
 
     const stats = statsResult[0];
 
-    // Fetch attendance rate
+    // Fetch attendance rate (all time)
     const attendanceResult = await db
         .select({
             attendanceRate: sql<number>`
@@ -202,12 +207,12 @@ export async function getStudentDetail(
     const healthScore = attendanceRate * 0.6 + performanceScore * 0.4;
     const dropoutRisk = Math.max(0, 100 - healthScore);
 
-    // Fetch courses for student's grade with performance data
+    // Fetch courses for student's grade with performance data (including individual scores)
     const coursesResult = await db
         .select({
-            courseId: Game.Id,
-            courseTitle: Game.Title,
-            courseSubject: Game.Subject,
+            courseId: Course.Id,
+            courseTitle: Course.Title,
+            courseSubject: Course.Subject,
             performanceId: CoursePerformance.Id,
             assignment1: CoursePerformance.Assignment1,
             assignment2: CoursePerformance.Assignment2,
@@ -219,21 +224,23 @@ export async function getStudentDetail(
             term: CoursePerformance.Term,
             academicYear: CoursePerformance.AcademicYear,
         })
-        .from(Game)
+        .from(Course)
         .leftJoin(
             CoursePerformance,
             and(
-                eq(CoursePerformance.CourseId, Game.Id),
+                eq(CoursePerformance.CourseId, Course.Id),
                 eq(CoursePerformance.StudentId, studentId)
             )
         )
         .where(
             and(
-                eq(Game.GameLevel, Number(student.grade) || 1),
-                eq(Game.OrganizationId, organizationId),
-                eq(Game.Status, "Published")
+                eq(Course.Grade, student.grade || ""),
+                eq(Course.OrganizationId, organizationId),
+                eq(Course.Status, "Published"),
+                eq(Course.IsActive, true)
             )
-        );
+        )
+        .orderBy(Course.Order, Course.Title);
 
     const courses = coursesResult.map((row) => ({
         id: row.courseId,
@@ -254,7 +261,7 @@ export async function getStudentDetail(
             : null,
     }));
 
-    // Fetch attendance history (last 30 days)
+    // Fetch attendance history (last 30 days with daily records)
     const attendanceHistory = await db
         .select({
             date: Attendance.Date,
@@ -265,7 +272,8 @@ export async function getStudentDetail(
         .where(
             and(
                 eq(Attendance.StudentId, studentId),
-                eq(Attendance.OrganizationId, organizationId)
+                eq(Attendance.OrganizationId, organizationId),
+                gte(Attendance.Date, thirtyDaysAgo.toISOString().split('T')[0])
             )
         )
         .orderBy(desc(Attendance.Date))
