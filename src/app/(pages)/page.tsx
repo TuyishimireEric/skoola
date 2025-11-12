@@ -80,11 +80,18 @@ const HomePage = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            <a href="#features" className="text-gray-600 hover:text-green-600 transition-colors">Features</a>
-            <a href="#how-it-works" className="text-gray-600 hover:text-green-600 transition-colors">How It Works</a>
+            <Link href="#features" className="text-gray-600 hover:text-green-600 transition-colors">Features</Link>
+            <Link href="#how-it-works" className="text-gray-600 hover:text-green-600 transition-colors">How It Works</Link>
+            {userId && (
+              <Link href="/dashboard" className="text-gray-600 hover:text-green-600 transition-colors">Dashboard</Link>
+            )}
+            
             {userId ? (
               // Enhanced User Profile Menu
               <div className="relative ml-2 xl:ml-4" ref={userMenuRef}>
+                
+
+
                 <motion.button
                   whileHover={{ scale: 1.05, y: -1 }}
                   whileTap={{ scale: 0.98 }}

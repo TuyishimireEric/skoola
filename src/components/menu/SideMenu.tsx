@@ -50,17 +50,7 @@ const SideNav = () => {
       icon: <BookOpen className="w-5 h-5" />,
       label: "Courses",
       path: "/courses",
-    },
-    {
-      icon: <Activity className="w-5 h-5" />,
-      label: "Activities",
-      path: "/activities",
-    },
-    {
-      icon: <TrendingUp className="w-5 h-5" />,
-      label: "Performance",
-      path: "/performance",
-    },
+    }
   ];
 
   // Efficient active state check
@@ -158,18 +148,6 @@ const SideNav = () => {
 
       {/* Footer Actions */}
       <div className="p-4 border-t border-gray-200 space-y-1">
-        <button
-          onClick={() => handleNavigation("/dashboard/settings")}
-          className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
-            isActive("/dashboard/settings")
-              ? "bg-gradient-to-r from-green-500 to-amber-500 text-white shadow-lg shadow-green-500/30"
-              : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-          }`}
-          aria-current={isActive("/dashboard/settings") ? "page" : undefined}
-        >
-          <Settings className="w-5 h-5" />
-          {!isCollapsed && <span>Settings</span>}
-        </button>
 
         <button 
           onClick={handleLogout}

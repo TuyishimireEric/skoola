@@ -3,8 +3,6 @@ import {
     User,
     OrganizationUser,
     Attendance,
-    CoursePerformance,
-    StudentGame,
 } from "@/server/db/schema";
 import { eq, and, sql, desc, gte } from "drizzle-orm";
 
@@ -84,77 +82,96 @@ export async function getDashboardStats(
             studentAvatar: User.ImageUrl,
             studentGrade: OrganizationUser.Grade,
             attendanceRate: sql<number>`
-        COALESCE(
-          (
-            SELECT ROUND(
-              (COUNT(CASE WHEN a."Status" IN ('present', 'late') THEN 1 END)::NUMERIC / 
-              NULLIF(COUNT(*)::NUMERIC, 0)) * 100, 
-              2
+            COALESCE(
+                (
+                SELECT ROUND(
+                    (
+                    COUNT(CASE WHEN a."Status" IN ('present', 'late') THEN 1 END)::NUMERIC
+                    / NULLIF(COUNT(*)::NUMERIC, 0)
+                    ) * 100,
+                    2
+                )
+                FROM "Attendance" a
+                WHERE a."StudentId" = ${User.Id}
+                    AND a."OrganizationId" = ${organizationId}
+                    AND a."Date" >= date_trunc('month', CURRENT_DATE)
+                    AND a."Date" < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+                ),
+                0
             )
-            FROM "Attendance" a
-            WHERE a."StudentId" = ${User.Id}
-              AND a."OrganizationId" = ${organizationId}
-          ),
-          0
-        )
-      `,
+            `,
+
             performanceScore: sql<number>`
         COALESCE(
-          (
+            (
             SELECT ROUND(
-              AVG(
-                CASE 
-                  WHEN (
-                    CASE WHEN CAST(cp."Assignment1" AS TEXT) IS NOT NULL AND CAST(cp."Assignment1" AS TEXT) != '' THEN 0.1 ELSE 0 END +
-                    CASE WHEN CAST(cp."Assignment2" AS TEXT) IS NOT NULL AND CAST(cp."Assignment2" AS TEXT) != '' THEN 0.1 ELSE 0 END +
-                    CASE WHEN CAST(cp."CAT" AS TEXT) IS NOT NULL AND CAST(cp."CAT" AS TEXT) != '' THEN 0.4 ELSE 0 END +
-                    CASE WHEN CAST(cp."Exam" AS TEXT) IS NOT NULL AND CAST(cp."Exam" AS TEXT) != '' THEN 0.4 ELSE 0 END
-                  ) > 0 THEN
+                AVG(
+                -- compute for each CoursePerformance row: normalized weighted score (only weights of present marks)
+                CASE
+                    WHEN (
+                    (CASE WHEN cp."Assignment1" IS NOT NULL THEN 0.1 ELSE 0 END) +
+                    (CASE WHEN cp."Assignment2" IS NOT NULL THEN 0.1 ELSE 0 END) +
+                    (CASE WHEN cp."CAT" IS NOT NULL THEN 0.4 ELSE 0 END) +
+                    (CASE WHEN cp."Exam" IS NOT NULL THEN 0.4 ELSE 0 END)
+                    ) > 0 THEN
                     (
-                      (
-                        CASE WHEN CAST(cp."Assignment1" AS TEXT) IS NOT NULL AND CAST(cp."Assignment1" AS TEXT) != '' 
-                        THEN CAST(cp."Assignment1" AS NUMERIC) * 0.1 ELSE 0 END +
-                        CASE WHEN CAST(cp."Assignment2" AS TEXT) IS NOT NULL AND CAST(cp."Assignment2" AS TEXT) != '' 
-                        THEN CAST(cp."Assignment2" AS NUMERIC) * 0.1 ELSE 0 END +
-                        CASE WHEN CAST(cp."CAT" AS TEXT) IS NOT NULL AND CAST(cp."CAT" AS TEXT) != '' 
-                        THEN CAST(cp."CAT" AS NUMERIC) * 0.4 ELSE 0 END +
-                        CASE WHEN CAST(cp."Exam" AS TEXT) IS NOT NULL AND CAST(cp."Exam" AS TEXT) != '' 
-                        THEN CAST(cp."Exam" AS NUMERIC) * 0.4 ELSE 0 END
-                      ) / 
-                      (
-                        CASE WHEN CAST(cp."Assignment1" AS TEXT) IS NOT NULL AND CAST(cp."Assignment1" AS TEXT) != '' THEN 0.1 ELSE 0 END +
-                        CASE WHEN CAST(cp."Assignment2" AS TEXT) IS NOT NULL AND CAST(cp."Assignment2" AS TEXT) != '' THEN 0.1 ELSE 0 END +
-                        CASE WHEN CAST(cp."CAT" AS TEXT) IS NOT NULL AND CAST(cp."CAT" AS TEXT) != '' THEN 0.4 ELSE 0 END +
-                        CASE WHEN CAST(cp."Exam" AS TEXT) IS NOT NULL AND CAST(cp."Exam" AS TEXT) != '' THEN 0.4 ELSE 0 END
-                      )
+                        (
+                        CASE WHEN cp."Assignment1" IS NOT NULL THEN cp."Assignment1" * 0.1 ELSE 0 END +
+                        CASE WHEN cp."Assignment2" IS NOT NULL THEN cp."Assignment2" * 0.1 ELSE 0 END +
+                        CASE WHEN cp."CAT" IS NOT NULL THEN cp."CAT" * 0.4 ELSE 0 END +
+                        CASE WHEN cp."Exam" IS NOT NULL THEN cp."Exam" * 0.4 ELSE 0 END
+                        )
+                        /
+                        (
+                        (CASE WHEN cp."Assignment1" IS NOT NULL THEN 0.1 ELSE 0 END) +
+                        (CASE WHEN cp."Assignment2" IS NOT NULL THEN 0.1 ELSE 0 END) +
+                        (CASE WHEN cp."CAT" IS NOT NULL THEN 0.4 ELSE 0 END) +
+                        (CASE WHEN cp."Exam" IS NOT NULL THEN 0.4 ELSE 0 END)
+                        )
                     )
-                  ELSE NULL
+                    ELSE NULL
                 END
-              ), 
-              2
+                ),
+                2
             )
             FROM "CoursePerformance" cp
             WHERE cp."StudentId" = ${User.Id}
-              AND cp."OrganizationId" = ${organizationId}
-          ),
-          0
+                AND cp."OrganizationId" = ${organizationId}
+            ),
+            0
         )
-      `,
+    `,
+
         })
         .from(User)
         .innerJoin(OrganizationUser, eq(User.Id, OrganizationUser.UserId))
         .where(gradeFilter);
 
-    // Calculate metrics from students data
-    const totalAttendance = studentsData.reduce((sum, s) => sum + s.attendanceRate, 0);
-    const averageAttendance = studentsData.length > 0
-        ? Math.round(totalAttendance / studentsData.length)
-        : 0;
 
-    const totalPerformance = studentsData.reduce((sum, s) => sum + s.performanceScore, 0);
-    const classAverage = studentsData.length > 0
-        ? Math.round(totalPerformance / studentsData.length)
-        : 0;
+
+    // Calculate total performance excluding null scores
+    const totalPerformance = studentsData.reduce((sum, s) => {
+        // Ensure performanceScore is a valid number
+        const score = Number(s.performanceScore);  // Convert to number safely
+
+        // Only include valid performance scores (non-null, non-zero)
+        if (!isNaN(score) && score > 0) {
+            return sum + score;
+        }
+        return sum;
+    }, 0);
+
+    // Count only students with valid (non-null and non-zero) performance scores
+    const validPerformanceCount = studentsData.filter(s => {
+        const score = Number(s.performanceScore);  // Convert to number safely
+        return !isNaN(score) && score > 0;
+    }).length;
+
+    // Calculate class average (ensure we don't divide by zero)
+    const classAverage = validPerformanceCount > 0
+        ? Math.round(totalPerformance / validPerformanceCount)
+        : 0; // Return 0 if there are no valid performance scores
+
 
     // Calculate dropout risk for each student (60% attendance + 40% performance)
     const studentsWithRisk = studentsData.map((student) => {
@@ -241,6 +258,37 @@ export async function getDashboardStats(
             };
         })
     );
+
+    const monthlyAttendanceResult = await db
+        .select({
+            averageAttendance: sql<number>`
+      COALESCE(
+        ROUND(
+          (
+            COUNT(CASE WHEN ${Attendance.Status} IN ('present', 'late') THEN 1 END)::NUMERIC
+            / NULLIF(COUNT(*)::NUMERIC, 0)
+          ) * 100,
+          2
+        ),
+        0
+      )
+    `,
+        })
+        .from(Attendance)
+        .innerJoin(OrganizationUser, eq(Attendance.StudentId, OrganizationUser.UserId))
+        .where(
+            and(
+                eq(Attendance.OrganizationId, organizationId),
+                sql`${Attendance.Date} >= date_trunc('month', CURRENT_DATE)
+           AND ${Attendance.Date} < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'`,
+                eq(OrganizationUser.RoleId, 2),
+                eq(OrganizationUser.Status, 'Active'),
+                grade ? eq(OrganizationUser.Grade, grade) : undefined
+            )
+        );
+
+    const averageAttendance = monthlyAttendanceResult[0]?.averageAttendance ?? 0;
+
 
     // 4. Get performance distribution
     const performanceDistribution = [

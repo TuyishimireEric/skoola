@@ -9,10 +9,6 @@ import {
   Users,
   Calendar,
   Award,
-  MessageSquare,
-  CheckCircle,
-  XCircle,
-  Clock,
   AlertCircle,
   ChevronRight,
   Loader2,
@@ -303,14 +299,6 @@ const DropoutRiskChart: React.FC<DropoutRiskChartProps> = ({ data }) => {
   return <canvas ref={chartRef} />;
 };
 
-interface RecentActivity {
-  student: string;
-  activity: string;
-  score: string;
-  time: string;
-  type: "success" | "warning" | "alert";
-}
-
 interface AIRecommendation {
   priority: "high" | "medium";
   student: string;
@@ -323,38 +311,6 @@ const Dashboard: React.FC = () => {
   const [showGradeDropdown, setShowGradeDropdown] = useState(false);
 
   const { data: dashboardData, isLoading, isError, error } = useDashboard(selectedGrade);
-
-  // Mock data for recent activities (as requested)
-  const recentActivities: RecentActivity[] = [
-    {
-      student: "Aisha Kalisa",
-      activity: "Completed Math Quiz",
-      score: "85/100",
-      time: "2 hours ago",
-      type: "success",
-    },
-    {
-      student: "Emmanuel N.",
-      activity: "Absent from class",
-      score: "N/A",
-      time: "3 hours ago",
-      type: "warning",
-    },
-    {
-      student: "Jean-Pierre M.",
-      activity: "Late arrival (30 mins)",
-      score: "N/A",
-      time: "5 hours ago",
-      type: "alert",
-    },
-    {
-      student: "Fatima Senghor",
-      activity: "Submitted Homework",
-      score: "Completed",
-      time: "1 day ago",
-      type: "success",
-    },
-  ];
 
   // Mock AI Recommendations (as requested)
   const aiRecommendations: AIRecommendation[] = [
@@ -396,7 +352,7 @@ const Dashboard: React.FC = () => {
   };
 
   // Available grades for dropdown
-  const availableGrades = dashboardData?.gradeBreakdown?.map((g) => g.grade) || [];
+  const availableGrades = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"];
 
   if (isLoading) {
     return (
@@ -461,56 +417,54 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <main className="py-6 max-w-7xl mx-auto px-4">
         {/* Grade Filter */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-sm text-gray-600">
-              {selectedGrade || "All Grades"} Overview
+              {selectedGrade ? `Grade ${selectedGrade}` : "All Grades"} Overview
             </p>
           </div>
 
-          {availableGrades.length > 0 && (
-            <div className="relative">
-              <button
-                onClick={() => setShowGradeDropdown(!showGradeDropdown)}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <span className="text-sm font-medium text-gray-700">
-                  {selectedGrade || "All Grades"}
-                </span>
-                <ChevronDown className="w-4 h-4 text-gray-600" />
-              </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowGradeDropdown(!showGradeDropdown)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-sm font-medium text-gray-700">
+                {selectedGrade ? `Grade ${selectedGrade}` : "All Grades"}
+              </span>
+              <ChevronDown className="w-4 h-4 text-gray-600" />
+            </button>
 
-              {showGradeDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            {showGradeDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                <button
+                  onClick={() => {
+                    setSelectedGrade("");
+                    setShowGradeDropdown(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg"
+                >
+                  All Grades
+                </button>
+                {availableGrades.map((grade) => (
                   <button
+                    key={grade}
                     onClick={() => {
-                      setSelectedGrade("");
+                      setSelectedGrade(grade.replace("Grade ", ""));
                       setShowGradeDropdown(false);
                     }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg"
+                    className={`w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 last:rounded-b-lg ${selectedGrade === grade.replace("Grade ", "") ? "font-bold bg-gray-100" : ""}`}
                   >
-                    All Grades
+                    {grade}
                   </button>
-                  {availableGrades.map((grade) => (
-                    <button
-                      key={grade}
-                      onClick={() => {
-                        setSelectedGrade(grade.replace("Grade ", ""));
-                        setShowGradeDropdown(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 last:rounded-b-lg"
-                    >
-                      {grade}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
+
         </div>
 
         {/* AI Alert Banner */}
@@ -554,10 +508,10 @@ const Dashboard: React.FC = () => {
               <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
               <p
                 className={`text-xs font-medium ${stat.trend === "up" && stat.label !== "At Risk"
-                    ? "text-green-600"
-                    : stat.trend === "up"
-                      ? "text-red-600"
-                      : "text-red-600"
+                  ? "text-green-600"
+                  : stat.trend === "up"
+                    ? "text-red-600"
+                    : "text-red-600"
                   }`}
               >
                 {stat.change}
@@ -593,46 +547,19 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Performance Distribution */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              Class Performance Distribution
-            </h2>
-            <div className="h-64">
-              <PerformanceDistributionChart data={dashboardData.performanceDistribution} />
-            </div>
-          </div>
 
           {/* Grade Breakdown (only if viewing all grades) */}
-          {!selectedGrade && dashboardData.gradeBreakdown.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Grade Breakdown</h2>
-              <div className="space-y-3">
-                {dashboardData.gradeBreakdown.map((grade, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                    onClick={() => setSelectedGrade(grade.grade.replace("Grade ", ""))}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-sm text-gray-900">{grade.grade}</h3>
-                        <span className="text-xs text-gray-600">
-                          {grade.studentCount} students
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-gray-600">
-                        <span>Avg: {grade.averagePerformance}%</span>
-                        <span className="text-red-600">At Risk: {grade.atRiskCount}</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
+        {/* Performance Distribution */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            Class Performance Distribution
+          </h2>
+          <div className="h-64">
+            <PerformanceDistributionChart data={dashboardData.performanceDistribution} />
+          </div>
+        </div>
+
 
         {/* Students At Risk Section */}
         {dashboardData.topAtRiskStudents.length > 0 && (
@@ -687,10 +614,10 @@ const Dashboard: React.FC = () => {
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${student.dropoutRisk >= 70
-                            ? "bg-red-500"
-                            : student.dropoutRisk >= 60
-                              ? "bg-orange-500"
-                              : "bg-yellow-500"
+                          ? "bg-red-500"
+                          : student.dropoutRisk >= 60
+                            ? "bg-orange-500"
+                            : "bg-yellow-500"
                           }`}
                         style={{ width: `${student.dropoutRisk}%` }}
                       ></div>
@@ -728,6 +655,35 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
+        {!selectedGrade && dashboardData.gradeBreakdown.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Grade Breakdown</h2>
+            <div className="space-y-3">
+              {dashboardData.gradeBreakdown.map((grade, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  onClick={() => setSelectedGrade(grade.grade.replace("Grade ", ""))}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-sm text-gray-900">{grade.grade}</h3>
+                      <span className="text-xs text-gray-600">
+                        {grade.studentCount} students
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-gray-600">
+                      <span>Avg: {grade.averagePerformance}%</span>
+                      <span className="text-red-600">At Risk: {grade.atRiskCount}</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* AI Recommendations (Mock Data) */}
         <div className="mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -753,8 +709,8 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className={`text-xs font-bold px-2 py-1 rounded ${rec.priority === "high"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-orange-100 text-orange-700"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-orange-100 text-orange-700"
                           }`}
                       >
                         {rec.priority.toUpperCase()} PRIORITY
@@ -774,47 +730,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Activity (Mock Data) */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="space-y-3">
-            {recentActivities.map((activity, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === "success"
-                      ? "bg-green-100"
-                      : activity.type === "warning"
-                        ? "bg-orange-100"
-                        : "bg-red-100"
-                    }`}
-                >
-                  {activity.type === "success" ? (
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  ) : activity.type === "warning" ? (
-                    <XCircle className="w-4 h-4 text-orange-600" />
-                  ) : (
-                    <Clock className="w-4 h-4 text-red-600" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {activity.student}
-                  </p>
-                  <p className="text-xs text-gray-600">{activity.activity}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-medium text-gray-900">
-                    {activity.score}
-                  </p>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </main>
     </div>
   );
