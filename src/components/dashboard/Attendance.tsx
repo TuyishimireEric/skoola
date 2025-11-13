@@ -493,7 +493,7 @@ const AttendancePage: React.FC = () => {
                     {hasUnsavedChanges && canEditDate && (
                         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-blue-800">
                             <AlertTriangle className="w-5 h-5" />
-                            <span className="text-sm">You have unsaved changes. Don't forget to save!</span>
+                            <span className="text-sm">You have unsaved changes. Don&apos;t forget to save!</span>
                         </div>
                     )}
                 </div>

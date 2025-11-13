@@ -1,5 +1,5 @@
 import { db } from "@/server/db";
-import { User, OrganizationUser, ParentStudent, Attendance, CoursePerformance } from "@/server/db/schema";
+import { User, OrganizationUser, ParentStudent } from "@/server/db/schema";
 import { getAge } from "@/utils/functions";
 import { eq, and, sql, ilike, or, desc, asc } from "drizzle-orm";
 

@@ -265,13 +265,25 @@ const StudentDetailPage: React.FC = () => {
     };
   }, [student]);
 
-  const calculateDailyAttendance = (history: any[]) => {
-    const days = 30;
-    const labels = [];
-    const values = [];
+  type AttendanceStatus = "present" | "absent" | "late" | string;
 
-    const attendanceMap = new Map();
-    history.forEach((a) => {
+  interface AttendanceEntry {
+    date: string;
+    status: AttendanceStatus;
+  }
+
+  interface AttendanceData {
+    labels: string[];
+    values: number[];
+  }
+
+  const calculateDailyAttendance = (history: AttendanceEntry[]): AttendanceData => {
+    const days = 30;
+    const labels: string[] = [];
+    const values: number[] = [];
+
+    const attendanceMap: Map<string, AttendanceStatus> = new Map();
+    history.forEach((a: AttendanceEntry) => {
       const dateStr = new Date(a.date).toLocaleDateString("en-US", {
         day: "numeric",
         month: "short",

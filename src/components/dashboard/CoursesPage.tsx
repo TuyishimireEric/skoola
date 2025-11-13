@@ -92,7 +92,6 @@ const CourseDetailPage: React.FC = () => {
   const {
     data: performanceData,
     isLoading: isLoadingPerformance,
-    refetch: refetchPerformance,
   } = useQuery({
     queryKey: ["coursePerformance", courseId, selectedTerm, selectedYear],
     queryFn: async () => {

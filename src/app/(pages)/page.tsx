@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GraduationCap, Users, Brain, MessageSquare, TrendingUp, Bell, School, ArrowRight, CheckCircle, Rocket, ChevronDown, User, LogOut } from 'lucide-react';
+import { GraduationCap, Users, Brain, MessageSquare, Bell, School, ArrowRight, CheckCircle, Rocket, ChevronDown, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useClientSession } from '@/hooks/user/useClientSession';
@@ -14,7 +14,7 @@ const HomePage = () => {
   const [scrollY, setScrollY] = useState(0);
   const [userMenuOpen, setUserMenuOpen] = useState<boolean>(false);
 
-  const { userRoleId, userId, userEmail, userImage, userName } =
+  const { userId, userEmail, userImage, userName } =
     useClientSession();
 
   const userMenuItems: UserMenuItem[] = [

@@ -1,18 +1,13 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  Play,
   Clock,
   Users,
-  Star,
   Heart,
   BookOpen,
   Target,
-  MessageCircle,
   CheckCircle,
-  StarsIcon,
-  Settings,
   Edit,
   Home,
   Gamepad2,
@@ -20,16 +15,9 @@ import {
 } from "lucide-react";
 
 import { useGameById } from "@/hooks/games/useGames";
-import AfricanLoader from "../loader/AfricanLoader";
-import Image from "next/image";
-import LeaderBoard from "../learning/LeaderBoard";
 import { RelatedGames } from "./RelatedGames";
-import { Reviews } from "./Reviews";
 import AddGameForm from "./AddGame";
 import { GameDataI } from "@/types/Course";
-import { GameOverview } from "./GameOverview";
-import { AdminStats } from "./AdminStats";
-import { useGameReviews } from "@/hooks/reviews/useGameReviews";
 import { useLikeGame } from "@/hooks/reviews/useLikes";
 import { useClientSession } from "@/hooks/user/useClientSession";
 import { FaMarker } from "react-icons/fa6";

@@ -1,6 +1,4 @@
-import Loading from "@/components/loader/Loading";
 import React from "react";
-import Image from "next/image";
 
 const loading = () => {
   return (

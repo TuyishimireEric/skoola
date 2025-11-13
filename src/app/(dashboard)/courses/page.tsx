@@ -1,15 +1,22 @@
 "use client";
 
 import SchoolCoursesView from "@/components/dashboard/games/Courses";
-import Loading from "@/components/loader/Loading";
 import TopMenu from "@/components/menu/TopMenu";
 import { useClientSession } from "@/hooks/user/useClientSession";
+import { Loader2 } from "lucide-react";
 
 const Dashboard: React.FC = () => {
-  const { isLoading, organizationId } = useClientSession();
+  const { isLoading } = useClientSession();
 
   if (isLoading) {
-    return <Loading overlay={true} fullScreen={true} />;
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
+        <p className="text-gray-600">
+          Loading ...
+        </p>
+      </div>
+    );
   }
 
   return (

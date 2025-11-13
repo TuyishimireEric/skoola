@@ -7,14 +7,12 @@ import {
   Filter,
   Download,
   Mail,
-  Phone,
   Calendar,
   TrendingUp,
   TrendingDown,
   AlertTriangle,
   CheckCircle,
   ChevronRight,
-  X,
   Loader2,
 } from "lucide-react";
 import { useStudents } from "@/hooks/user/useStudents";
@@ -81,17 +79,6 @@ const StudentsPage: React.FC = () => {
     return "critical";
   };
 
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-
-    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    return "Just now";
-  };
 
   const getAttendance = (student: StudentListResponse) => {
     return student.attendanceRate || 0;
@@ -108,38 +95,6 @@ const StudentsPage: React.FC = () => {
     const riskScore = Math.max(0, 100 - healthScore);
 
     return Math.round(riskScore);
-  };
-
-  const getRiskLevel = (riskScore: number): {
-    level: string;
-    color: string;
-    textColor: string;
-  } => {
-    if (riskScore >= 70) {
-      return {
-        level: 'Critical',
-        color: 'bg-red-500',
-        textColor: 'text-red-600'
-      };
-    } else if (riskScore >= 50) {
-      return {
-        level: 'High',
-        color: 'bg-orange-500',
-        textColor: 'text-orange-600'
-      };
-    } else if (riskScore >= 30) {
-      return {
-        level: 'Medium',
-        color: 'bg-yellow-500',
-        textColor: 'text-yellow-600'
-      };
-    } else {
-      return {
-        level: 'Low',
-        color: 'bg-green-500',
-        textColor: 'text-green-600'
-      };
-    }
   };
 
   const grades = [

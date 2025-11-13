@@ -4,9 +4,6 @@ import {
   Star,
   Play,
   Smile,
-  Users,
-  Clock,
-  Trophy,
   Eye,
   Edit,
   Settings,
@@ -78,10 +75,7 @@ const GameCard = ({
     );
   };
 
-  const typeInfo = getTypeInfo(game.Type);
   const rating = parseFloat(game.AverageRating || "0") || 0;
-  const completionRate = parseFloat(game.CompletionRate || "0") || 0;
-  const studentsAttended = parseInt(game.StudentsAttended || "0") || 0;
 
   return (
     <>

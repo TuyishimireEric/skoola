@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import "animate.css";
 import "../globals.css";
-import { NavBar } from "@/components/menu/NavBar";
 
 export const metadata: Metadata = {
   title: "Login to SkoolaSync",

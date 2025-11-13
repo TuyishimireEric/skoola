@@ -4,7 +4,7 @@ import {
     OrganizationUser,
     Attendance,
 } from "@/server/db/schema";
-import { eq, and, sql, desc, gte } from "drizzle-orm";
+import { eq, and, sql, gte } from "drizzle-orm";
 
 export interface DashboardStats {
     totalStudents: number;
