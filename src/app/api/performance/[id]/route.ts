@@ -7,7 +7,7 @@ import { coursePerformanceSchema } from "@/types/Course";
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId, userRoleId, organizationId } = await getUserToken(req);
@@ -51,7 +51,8 @@ export async function PUT(
             );
         }
 
-        const updated = await updatePerformance(params.id, validationResult.data, userId);
+        const { id } = await params;
+        const updated = await updatePerformance(id, validationResult.data, userId);
 
         return NextResponse.json(
             {
@@ -73,7 +74,7 @@ export async function PUT(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId, userRoleId, organizationId } = await getUserToken(req);
@@ -100,7 +101,8 @@ export async function DELETE(
             );
         }
 
-        await deletePerformance(params.id, organizationId);
+        const { id } = await params;
+        await deletePerformance(id, organizationId);
 
         return NextResponse.json(
             {
