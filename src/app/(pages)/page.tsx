@@ -18,7 +18,7 @@ const HomePage = () => {
     useClientSession();
 
   const userMenuItems: UserMenuItem[] = [
-    { name: "Profile", href: "/profile", icon: User },
+    { name: "Profile", href: "/", icon: User },
   ];
 
   const handleLogout = async (): Promise<void> => {
