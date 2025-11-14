@@ -25,55 +25,6 @@ const GameCard = ({
   isAdmin = false,
   setEditGame,
 }: GameCardProps) => {
-  const getTypeInfo = (type: string | undefined) => {
-    const typeMap: Record<
-      string,
-      { label: string; emoji: string; color: string }
-    > = {
-      ImageBased: {
-        label: "Game",
-        emoji: "🎮",
-        color: "bg-green-100 text-green-800",
-      },
-      FillInTheBlank: {
-        label: "Quiz",
-        emoji: "❓",
-        color: "bg-blue-100 text-blue-800",
-      },
-      Reading: {
-        label: "Course",
-        emoji: "📚",
-        color: "bg-purple-100 text-purple-800",
-      },
-      MathEquation: {
-        label: "Math",
-        emoji: "🔢",
-        color: "bg-orange-100 text-orange-800",
-      },
-      NumberSequence: {
-        label: "Sequence",
-        emoji: "🔢",
-        color: "bg-indigo-100 text-indigo-800",
-      },
-      Comparison: {
-        label: "Compare",
-        emoji: "⚖️",
-        color: "bg-pink-100 text-pink-800",
-      },
-      MissingNumber: {
-        label: "Puzzle",
-        emoji: "🧩",
-        color: "bg-yellow-100 text-yellow-800",
-      },
-    };
-    return (
-      typeMap[type || ""] || {
-        label: type || "Unknown",
-        emoji: "📝",
-        color: "bg-gray-100 text-gray-800",
-      }
-    );
-  };
 
   const rating = parseFloat(game.AverageRating || "0") || 0;
 

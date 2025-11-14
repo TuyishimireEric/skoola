@@ -1,7 +1,6 @@
 "use client";
 
 import ManagePerformancePage from "@/components/course/Performance";
-import Loading from "@/components/loader/Loading";
 import TopMenu from "@/components/menu/TopMenu";
 import { useClientSession } from "@/hooks/user/useClientSession";
 import { Loader2 } from "lucide-react";

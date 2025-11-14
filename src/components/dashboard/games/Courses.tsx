@@ -14,9 +14,7 @@ import {
   Star,
   Target,
   Activity,
-  ChevronRight,
-  Home,
-  LucideIcon,
+  ChevronRight
 } from "lucide-react";
 import StatsCard from "../StatsCard";
 import { useAdminGames } from "@/hooks/games/useAdminGames";
@@ -24,7 +22,6 @@ import { GameDataI } from "@/types/Course";
 import { GameCardSkeleton } from "./GameCard";
 import GameCard from "@/components/games/GameCard";
 import AddGameForm from "@/components/games/AddGame";
-import { useRouter } from "next/navigation";
 
 const SUBJECTS = [
   "Mathematics",

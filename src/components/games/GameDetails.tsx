@@ -155,12 +155,6 @@ const GameDetailsPage: React.FC<GameDetailsPageProps> = ({
   // Check if user is admin - use prop or fallback to session
   const isUserAdmin = isAdmin || false;
 
-  const handlePlayGame = () => {
-    if (game?.Id) {
-      router.push(`/courses/${game.Id}/play`);
-    }
-  };
-
   const handlePerformance = () => {
     if (game?.Id) {
       router.push(`/courses/${game.Id}/performance`);
@@ -202,19 +196,6 @@ const GameDetailsPage: React.FC<GameDetailsPageProps> = ({
     if (game.NumberOfLevels <= 5) return "Medium";
     return "Hard";
   }, [game?.NumberOfLevels]);
-
-  const difficultyColor = useMemo(() => {
-    switch (difficultyLevel) {
-      case "Easy":
-        return "from-green-400 to-green-600";
-      case "Medium":
-        return "from-yellow-400 to-orange-500";
-      case "Hard":
-        return "from-red-400 to-red-600";
-      default:
-        return "from-gray-400 to-gray-500";
-    }
-  }, [difficultyLevel]);
 
   // Loading state
   if (isLoading) {

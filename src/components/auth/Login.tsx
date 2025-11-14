@@ -4,7 +4,6 @@ import { LoginForm } from "./LoginForm";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import RegisterFrom from "./RegisterForm";
-import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useClientSession } from "@/hooks/user/useClientSession";
 

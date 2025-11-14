@@ -7,14 +7,11 @@ import {
   Users,
   CalendarCheck,
   BookOpen,
-  Activity,
-  TrendingUp,
   MessageSquare,
   School,
   ChevronLeft,
   ChevronRight,
-  LogOut,
-  Settings,
+  LogOut
 } from "lucide-react";
 
 // Types

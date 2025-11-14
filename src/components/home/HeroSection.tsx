@@ -199,7 +199,7 @@ export default function HeroSection() {
                 transition={{ delay: 1 }}
                 className="relative z-10 text-base sm:text-lg text-gray-600 mb-8 leading-relaxed max-w-3xl"
               >
-                A technology-based early warning system addressing high dropout rates in Rwanda's rural primary schools. SkoolaSync bridges the communication gap among parents, teachers, school leaders, and students by providing real-time oversight of attendance, academic performance, and behavioral patterns.
+                A technology-based early warning system addressing high dropout rates in Rwanda&apos;s rural primary schools. SkoolaSync bridges the communication gap among parents, teachers, school leaders, and students by providing real-time oversight of attendance, academic performance, and behavioral patterns.
               </motion.p>
 
               {/* Key Features Grid */}

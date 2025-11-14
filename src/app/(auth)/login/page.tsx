@@ -3,9 +3,6 @@
 import React, { useState } from "react";
 import {
   School,
-  GraduationCap,
-  Users,
-  BookOpen,
   ArrowLeft,
 } from "lucide-react";
 import { Login } from "@/components/auth/Login";
