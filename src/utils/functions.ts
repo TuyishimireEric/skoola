@@ -5,6 +5,46 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "active":
+    case "excellent":
+      return "bg-green-100 text-green-700 border-green-300";
+    case "good":
+      return "bg-blue-100 text-blue-700 border-blue-300";
+    case "warning":
+      return "bg-orange-100 text-orange-700 border-orange-300";
+    case "critical":
+    case "inactive":
+      return "bg-red-100 text-red-700 border-red-300";
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-300";
+  }
+};
+
+export const formatStringDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+export const getTimeAgo = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+  if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
+  return "Just now";
+};
+
+
 export function calculateNiceMaxValue(maxValue: number): number {
   if (maxValue <= 0) return 10; // Default for no data or negative values
 

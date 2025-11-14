@@ -14,7 +14,6 @@ import {
   AlertTriangle,
   CheckCircle,
   Award,
-  BookOpen,
   MessageSquare,
   Bell,
   Download,
@@ -30,6 +29,8 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { useStudentDetail } from "@/hooks/user/useStudentDetails";
 import { useAIInsights } from "@/hooks/user/useAIInsights";
+import { getInitials, getStatusColor, formatStringDate, getTimeAgo } from "@/utils/functions";
+import { QuickActions } from "./QuickActions";
 
 interface Recommendation {
   id: string;
@@ -338,53 +339,6 @@ const StudentDetailPage: React.FC = () => {
     return { labels, values };
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active":
-      case "excellent":
-        return "bg-green-100 text-green-700 border-green-300";
-      case "good":
-        return "bg-blue-100 text-blue-700 border-blue-300";
-      case "warning":
-        return "bg-orange-100 text-orange-700 border-orange-300";
-      case "critical":
-      case "inactive":
-        return "bg-red-100 text-red-700 border-red-300";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-300";
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
-    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-    if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
-    return "Just now";
-  };
 
   const handlePostComment = () => {
     if (!newComment.trim()) return;
@@ -605,7 +559,7 @@ const StudentDetailPage: React.FC = () => {
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Calendar className="w-4 h-4 text-green-600" />
                           <span>
-                            {formatDate(student.dateOfBirth)} ({student.age} years old)
+                            {formatStringDate(student.dateOfBirth)} ({student.age} years old)
                           </span>
                         </div>
                       )}
@@ -1213,37 +1167,7 @@ const StudentDetailPage: React.FC = () => {
 
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
-              <MessageSquare className="w-6 h-6 text-gray-600 group-hover:text-green-600" />
-              <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
-                Send Message
-              </span>
-            </button>
-            {student.parent && (
-              <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
-                <Phone className="w-6 h-6 text-gray-600 group-hover:text-green-600" />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
-                  Call Parent
-                </span>
-              </button>
-            )}
-            <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
-              <BookOpen className="w-6 h-6 text-gray-600 group-hover:text-green-600" />
-              <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
-                View Courses
-              </span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
-              <Download className="w-6 h-6 text-gray-600 group-hover:text-green-600" />
-              <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
-                Generate Report
-              </span>
-            </button>
-          </div>
-        </div>
+        <QuickActions />
       </div>
     </div>
   );

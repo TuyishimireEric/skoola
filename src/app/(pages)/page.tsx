@@ -68,10 +68,10 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen w-full max-w-7xl bg-white overflow-x-hidden">
+    <div className="min-h-screen w-full bg-white overflow-x-hidden">
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-10 py-4 flex items-center justify-between">
+        <div className="mx-auto px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
               <motion.div
