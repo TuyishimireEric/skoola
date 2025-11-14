@@ -8,11 +8,13 @@ import {
   CalendarCheck,
   BookOpen,
   MessageSquare,
-  School,
   ChevronLeft,
   ChevronRight,
   LogOut
 } from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import Image from "next/image";
 
 // Types
 interface NavItem {
@@ -69,18 +71,41 @@ const SideNav = () => {
 
   return (
     <aside
-      className={`flex flex-col shadow-lg border-r border-gray-200 overflow-hidden min-h-screen transition-all duration-300 ${
-        isCollapsed ? "w-20" : "w-64"
-      }`}
+      className={`flex flex-col shadow-lg border-r border-gray-200 overflow-hidden min-h-screen transition-all duration-300 ${isCollapsed ? "w-20 min-w-20" : "min-w-64"
+        }`}
     >
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-amber-500 rounded-lg flex items-center justify-center">
-                <School className="w-5 h-5 text-white" />
-              </div>
+              <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+                <motion.div
+                  className="w-8 h-8 relative"
+                  whileHover={{ scale: 1.1, rotate: 10 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 15,
+                    duration: 0.6,
+                  }}
+                >
+                  <Image
+                    src="https://res.cloudinary.com/dn8vyfgnl/image/upload/v1763116382/logo_gc6c0r.png"
+                    alt="logo"
+                    width={50}
+                    height={50}
+                    className="object-contain"
+                    priority
+                    unoptimized
+                  />
+                  {/* Glow effect on hover */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-br from-primary-400/30 to-orange-400/30 rounded-full blur-lg opacity-0 group-hover:opacity-100"
+                    transition={{ duration: 0.4 }}
+                  />
+                </motion.div>
+              </Link>
               <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-amber-600 bg-clip-text text-transparent">
                 SkoolaSync
               </span>
@@ -108,11 +133,10 @@ const SideNav = () => {
             <button
               key={item.path}
               onClick={() => handleNavigation(item.path)}
-              className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                active
+              className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${active
                   ? "bg-gradient-to-r from-green-500 to-amber-500 text-white shadow-lg shadow-green-500/30"
                   : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              }`}
+                }`}
               aria-current={active ? "page" : undefined}
             >
               <span className={active ? "text-white" : "text-gray-500"}>
@@ -128,11 +152,10 @@ const SideNav = () => {
       <div className="p-4 border-t border-gray-200 space-y-1">
         <button
           onClick={() => handleNavigation("/dashboard/chat")}
-          className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
-            isActive("/dashboard/chat")
+          className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${isActive("/dashboard/chat")
               ? "bg-gradient-to-r from-green-500 to-amber-500 text-white shadow-lg shadow-green-500/30"
               : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-          }`}
+            }`}
           aria-current={isActive("/dashboard/chat") ? "page" : undefined}
         >
           <MessageSquare className="w-5 h-5" />
@@ -146,7 +169,7 @@ const SideNav = () => {
       {/* Footer Actions */}
       <div className="p-4 border-t border-gray-200 space-y-1">
 
-        <button 
+        <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
         >
