@@ -73,7 +73,33 @@ const HomePage = () => {
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <School className="w-8 h-8 text-green-600" />
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+              <motion.div
+                className="w-12 h-12 relative"
+                whileHover={{ scale: 1.1, rotate: 10 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 15,
+                  duration: 0.6,
+                }}
+              >
+                <Image
+                  src="https://res.cloudinary.com/dn8vyfgnl/image/upload/v1763116382/logo_gc6c0r.png"
+                  alt="logo"
+                  width={50}
+                  height={50}
+                  className="object-contain"
+                  priority
+                  unoptimized
+                />
+                {/* Glow effect on hover */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-br from-primary-400/30 to-orange-400/30 rounded-full blur-lg opacity-0 group-hover:opacity-100"
+                  transition={{ duration: 0.4 }}
+                />
+              </motion.div>
+            </Link>
             <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-amber-600 bg-clip-text text-transparent">
               SkoolaSync
             </span>
@@ -85,11 +111,11 @@ const HomePage = () => {
             {userId && (
               <Link href="/dashboard" className="text-gray-600 hover:text-green-600 transition-colors">Dashboard</Link>
             )}
-            
+
             {userId ? (
               // Enhanced User Profile Menu
               <div className="relative ml-2 xl:ml-4" ref={userMenuRef}>
-                
+
 
 
                 <motion.button
