@@ -149,7 +149,7 @@ const SideNav = () => {
       </nav>
 
       {/* Chat Section */}
-      <div className="p-4 border-t border-gray-200 space-y-1">
+      {/* <div className="p-4 border-t border-gray-200 space-y-1">
         <button
           onClick={() => handleNavigation("/chat")}
           className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${isActive("/dashboard/chat")
@@ -164,7 +164,7 @@ const SideNav = () => {
             <span className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></span>
           )}
         </button>
-      </div>
+      </div> */}
 
       {/* Footer Actions */}
       <div className="p-4 border-t border-gray-200 space-y-1">
