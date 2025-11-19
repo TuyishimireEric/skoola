@@ -31,94 +31,15 @@ const nunito = Nunito({
   weight: ["400", "700"],
 });
 
-export const metadata = {
-  title: "Ganzaa - Fun Learning Adventure for Kids",
-  description:
-    "Join Ganzaa's world of fun, games, and learning for an exciting educational journey! Interactive lessons in math, science, reading, and more.",
-  keywords:
-    "kids learning, educational games, children education, interactive learning, math for kids, science for kids, PWA, offline learning",
-  authors: [{ name: "Ganzaa Team" }],
-  creator: "Ganzaa",
-  publisher: "Ganzaa",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  metadataBase: new URL("https://ganzaa.org"),
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: "Ganzaa - Fun Learning Adventure for Kids",
-    description:
-      "Join Ganzaa's world of fun, games, and learning for an exciting educational journey!",
-    url: "https://ganzaa.org",
-    siteName: "Ganzaa",
-    images: [
-      {
-        url: "/Logo.png",
-        width: 1200,
-        height: 1200,
-        alt: "Ganzaa - Learning is an Adventure",
-      },
-    ],
-    locale: "en_US",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Ganzaa - Fun Learning Adventure for Kids",
-    description: "Join Ganzaa's world of fun, games, and learning!",
-    images: ["/Logo.png"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/favicon.ico", sizes: "32x32", type: "image/png" },
-      { url: "/Logo.png", sizes: "192x192", type: "image/png" },
-      { url: "/Logo.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/Logo.png" }],
-  },
-  manifest: "/manifest.json",
-  // PWA-specific metadata
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Ganzaa Learning",
-  },
-  other: {
-    "mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "default",
-    "apple-mobile-web-app-title": "Ganzaa",
-    "application-name": "Ganzaa",
-    "msapplication-TileColor": "#FFD166",
-    "msapplication-config": "/browserconfig.xml",
-  },
-};
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* PWA Meta Tags */}
-        <meta name="application-name" content="Ganzaa" />
+        <meta name="application-name" content="SkoolaSync" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Ganzaa" />
+        <meta name="apple-mobile-web-app-title" content="SkoolaSync" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
