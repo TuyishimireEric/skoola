@@ -2,7 +2,6 @@
 
 import { LoginForm } from "./LoginForm";
 import { motion } from "framer-motion";
-import { useState } from "react";
 import RegisterFrom from "./RegisterForm";
 import { useRouter } from "next/navigation";
 import { useClientSession } from "@/hooks/user/useClientSession";
@@ -12,12 +11,8 @@ interface LoginProps {
 }
 
 export const Login = ({ onClose }: LoginProps) => {
-  const [isLogin, setIsLogin] = useState(true);
+  const isLogin = true;
   const { userRoleId } = useClientSession();
-
-  const toggleMode = () => {
-    setIsLogin(!isLogin);
-  };
 
   const router = useRouter();
 
@@ -87,19 +82,6 @@ export const Login = ({ onClose }: LoginProps) => {
                 <RegisterFrom onClose={handleClose} />
               )}
             </motion.div>
-          </div>
-
-          <div className="text-center pt-2">
-            <p className="text-sm text-amber-700 font-comic">
-              {isLogin ? "New to the village? " : "Already have an account? "}
-              <button
-                type="button"
-                onClick={toggleMode}
-                className="text-amber-800 font-bold hover:text-amber-900 underline"
-              >
-                {isLogin ? "Join now!" : "Sign in!"}
-              </button>
-            </p>
           </div>
 
           {/* Terms and Privacy */}
