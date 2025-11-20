@@ -5,7 +5,7 @@ import {
     ParentStudent,
     Attendance,
     CoursePerformance,
-    Course,
+    Game,
     StudentGame,
 } from "@/server/db/schema";
 import { getAge } from "@/utils/functions";
@@ -46,7 +46,11 @@ export interface StudentDetailResponse {
         id: string;
         title: string;
         subject: string;
+        description: string;
+        imageUrl: string;
+        gameLevel: number;
         performance: {
+            id: string;
             assignment1: number | null;
             assignment2: number | null;
             cat: number | null;
@@ -120,30 +124,42 @@ export async function getStudentDetail(
 
     const student = studentResult[0];
 
-    // Fetch student stats
+    // Convert grade to number for GameLevel comparison
+    const gradeLevel = student.grade ? parseInt(student.grade.toString(), 10) : 1;
+
+    // Fetch student stats from StudentGame
     const statsResult = await db
         .select({
             totalStars: sql<number>`COALESCE(SUM(${StudentGame.Stars}), 0)`,
             totalCourses: sql<number>`COUNT(DISTINCT ${StudentGame.GameId})`,
-            lastActivity: sql<string>`MAX(${StudentGame.CompletedOn})`,
+            lastActivity: sql<string | null>`MAX(${StudentGame.CompletedOn})`,
             avgScore: sql<number>`COALESCE(AVG(CAST(${StudentGame.Score} AS DECIMAL)), 0)`,
             currentStreak: sql<number>`COALESCE(MAX(CASE WHEN ${StudentGame.CompletedOn} >= ${todayISO} THEN ${StudentGame.CurrentStreak} ELSE 0 END), 0)`,
         })
         .from(StudentGame)
         .where(eq(StudentGame.StudentId, studentId));
 
-    const stats = statsResult[0];
+    const stats = statsResult[0] || {
+        totalStars: 0,
+        totalCourses: 0,
+        lastActivity: null,
+        avgScore: 0,
+        currentStreak: 0,
+    };
 
     // Fetch attendance rate (all time)
     const attendanceResult = await db
         .select({
             attendanceRate: sql<number>`
-        ROUND(
-          (COUNT(CASE WHEN ${Attendance.Status} IN ('present', 'late') THEN 1 END)::NUMERIC / 
-          NULLIF(COUNT(*)::NUMERIC, 0)) * 100, 
-          2
-        )
-      `,
+                COALESCE(
+                    ROUND(
+                        (COUNT(CASE WHEN ${Attendance.Status} IN ('present', 'late') THEN 1 END)::NUMERIC / 
+                        NULLIF(COUNT(*)::NUMERIC, 0)) * 100, 
+                        2
+                    ),
+                    0
+                )
+            `,
         })
         .from(Attendance)
         .where(
@@ -155,43 +171,32 @@ export async function getStudentDetail(
 
     const attendanceRate = attendanceResult[0]?.attendanceRate || 0;
 
-    // Fetch performance score (weighted average across all courses)
+    // Fetch performance score using consistent calculation
+    // Only includes courses where ALL four components are present
     const performanceResult = await db
         .select({
             performanceScore: sql<number>`
-        ROUND(
-          AVG(
-            CASE 
-              WHEN (
-                CASE WHEN CAST(${CoursePerformance.Assignment1} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.Assignment1} AS TEXT) != '' THEN 0.1 ELSE 0 END +
-                CASE WHEN CAST(${CoursePerformance.Assignment2} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.Assignment2} AS TEXT) != '' THEN 0.1 ELSE 0 END +
-                CASE WHEN CAST(${CoursePerformance.CAT} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.CAT} AS TEXT) != '' THEN 0.4 ELSE 0 END +
-                CASE WHEN CAST(${CoursePerformance.Exam} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.Exam} AS TEXT) != '' THEN 0.4 ELSE 0 END
-              ) > 0 THEN
-                (
-                  (
-                    CASE WHEN CAST(${CoursePerformance.Assignment1} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.Assignment1} AS TEXT) != '' 
-                    THEN CAST(${CoursePerformance.Assignment1} AS NUMERIC) * 0.1 ELSE 0 END +
-                    CASE WHEN CAST(${CoursePerformance.Assignment2} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.Assignment2} AS TEXT) != '' 
-                    THEN CAST(${CoursePerformance.Assignment2} AS NUMERIC) * 0.1 ELSE 0 END +
-                    CASE WHEN CAST(${CoursePerformance.CAT} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.CAT} AS TEXT) != '' 
-                    THEN CAST(${CoursePerformance.CAT} AS NUMERIC) * 0.4 ELSE 0 END +
-                    CASE WHEN CAST(${CoursePerformance.Exam} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.Exam} AS TEXT) != '' 
-                    THEN CAST(${CoursePerformance.Exam} AS NUMERIC) * 0.4 ELSE 0 END
-                  ) / 
-                  (
-                    CASE WHEN CAST(${CoursePerformance.Assignment1} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.Assignment1} AS TEXT) != '' THEN 0.1 ELSE 0 END +
-                    CASE WHEN CAST(${CoursePerformance.Assignment2} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.Assignment2} AS TEXT) != '' THEN 0.1 ELSE 0 END +
-                    CASE WHEN CAST(${CoursePerformance.CAT} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.CAT} AS TEXT) != '' THEN 0.4 ELSE 0 END +
-                    CASE WHEN CAST(${CoursePerformance.Exam} AS TEXT) IS NOT NULL AND CAST(${CoursePerformance.Exam} AS TEXT) != '' THEN 0.4 ELSE 0 END
-                  )
+                COALESCE(
+                    ROUND(
+                        AVG(
+                            CASE 
+                                WHEN ${CoursePerformance.Assignment1} IS NOT NULL 
+                                    AND ${CoursePerformance.Assignment2} IS NOT NULL 
+                                    AND ${CoursePerformance.CAT} IS NOT NULL 
+                                    AND ${CoursePerformance.Exam} IS NOT NULL 
+                                THEN 
+                                    (CAST(${CoursePerformance.Assignment1} AS NUMERIC) * 0.1) + 
+                                    (CAST(${CoursePerformance.Assignment2} AS NUMERIC) * 0.1) + 
+                                    (CAST(${CoursePerformance.CAT} AS NUMERIC) * 0.4) + 
+                                    (CAST(${CoursePerformance.Exam} AS NUMERIC) * 0.4)
+                                ELSE NULL
+                            END
+                        ), 
+                        2
+                    ),
+                    0
                 )
-              ELSE NULL
-            END
-          ), 
-          2
-        )
-      `,
+            `,
         })
         .from(CoursePerformance)
         .where(
@@ -207,12 +212,16 @@ export async function getStudentDetail(
     const healthScore = attendanceRate * 0.6 + performanceScore * 0.4;
     const dropoutRisk = Math.max(0, 100 - healthScore);
 
-    // Fetch courses for student's grade with performance data (including individual scores)
+    // Fetch ALL courses (Games) that match the student's grade (GameLevel)
+    // Use LEFT JOIN to get courses even if no performance data exists
     const coursesResult = await db
         .select({
-            courseId: Course.Id,
-            courseTitle: Course.Title,
-            courseSubject: Course.Subject,
+            courseId: Game.Id,
+            courseTitle: Game.Title,
+            courseSubject: Game.Subject,
+            courseDescription: Game.Description,
+            courseImageUrl: Game.ImageUrl,
+            gameLevel: Game.GameLevel,
             performanceId: CoursePerformance.Id,
             assignment1: CoursePerformance.Assignment1,
             assignment2: CoursePerformance.Assignment2,
@@ -224,30 +233,34 @@ export async function getStudentDetail(
             term: CoursePerformance.Term,
             academicYear: CoursePerformance.AcademicYear,
         })
-        .from(Course)
+        .from(Game)
         .leftJoin(
             CoursePerformance,
             and(
-                eq(CoursePerformance.CourseId, Course.Id),
-                eq(CoursePerformance.StudentId, studentId)
+                eq(CoursePerformance.CourseId, Game.Id),
+                eq(CoursePerformance.StudentId, studentId),
+                eq(CoursePerformance.OrganizationId, organizationId)
             )
         )
         .where(
             and(
-                eq(Course.Grade, student.grade || ""),
-                eq(Course.OrganizationId, organizationId),
-                eq(Course.Status, "Published"),
-                eq(Course.IsActive, true)
+                eq(Game.OrganizationId, organizationId),
+                eq(Game.Status, "Published"),
+                eq(Game.GameLevel, gradeLevel) // Now using number
             )
         )
-        .orderBy(Course.Order, Course.Title);
+        .orderBy(Game.Title);
 
     const courses = coursesResult.map((row) => ({
         id: row.courseId,
         title: row.courseTitle,
         subject: row.courseSubject || "",
+        description: row.courseDescription || "",
+        imageUrl: row.courseImageUrl || "",
+        gameLevel: row.gameLevel || 1,
         performance: row.performanceId
             ? {
+                id: row.performanceId,
                 assignment1: row.assignment1 ? parseFloat(row.assignment1) : null,
                 assignment2: row.assignment2 ? parseFloat(row.assignment2) : null,
                 cat: row.cat ? parseFloat(row.cat) : null,
@@ -261,7 +274,7 @@ export async function getStudentDetail(
             : null,
     }));
 
-    // Fetch attendance history (last 30 days with daily records)
+    // Fetch attendance history (last 30 days)
     const attendanceHistory = await db
         .select({
             date: Attendance.Date,
@@ -285,8 +298,8 @@ export async function getStudentDetail(
     const lastName = nameParts.slice(1).join(" ") || "";
     const age = student.dateOfBirth ? getAge(new Date(student.dateOfBirth)) : 0;
 
-    // Behavior score (placeholder - you can implement based on your logic)
-    const behaviorScore = 92; // TODO: Calculate from actual behavior records
+    // Behavior score (placeholder)
+    const behaviorScore = 92;
 
     return {
         id: student.id,
@@ -317,9 +330,9 @@ export async function getStudentDetail(
         stats: {
             attendanceRate: Math.round(attendanceRate),
             performanceScore: Math.round(performanceScore),
-            totalStars: stats.totalStars,
-            totalCourses: stats.totalCourses,
-            currentStreak: stats.currentStreak,
+            totalStars: Number(stats.totalStars),
+            totalCourses: Number(stats.totalCourses),
+            currentStreak: Number(stats.currentStreak),
             behaviorScore,
             dropoutRisk: Math.round(dropoutRisk),
             lastActivity: stats.lastActivity || new Date().toISOString(),
