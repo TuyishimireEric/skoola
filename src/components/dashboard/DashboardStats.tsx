@@ -466,24 +466,6 @@ const Dashboard: React.FC = () => {
           </div>
 
         </div>
-
-        {/* AI Alert Banner */}
-        {dashboardData.atRiskCount > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-lg p-4 shadow-sm">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-bold text-red-900 mb-1">
-                  AI Early Warning: {dashboardData.atRiskCount} Student{dashboardData.atRiskCount > 1 ? 's' : ''} Require{dashboardData.atRiskCount === 1 ? 's' : ''} Immediate Attention
-                </h3>
-                <p className="text-sm text-red-800">
-                  Our predictive model has identified students showing multiple dropout risk indicators.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {classStats.map((stat, index) => (

@@ -25,9 +25,11 @@ import {
   Sparkles,
   Bot,
   Users,
+  RefreshCw,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useStudentDetail } from "@/hooks/user/useStudentDetails";
+import { useAIInsights } from "@/hooks/user/useAIInsights";
 
 interface Recommendation {
   id: string;
@@ -57,6 +59,14 @@ const StudentDetailPage: React.FC = () => {
 
   const { data: student, isLoading, isError, error } = useStudentDetail(studentId);
 
+  // Fetch AI insights automatically when student data is loaded
+  const {
+    data: aiInsightsData,
+    isLoading: isLoadingInsights,
+    isError: isInsightsError,
+    refetch: refetchInsights,
+  } = useAIInsights(studentId, !!student);
+
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
@@ -66,6 +76,13 @@ const StudentDetailPage: React.FC = () => {
   const performanceChartRef = useRef<HTMLCanvasElement | null>(null);
   const attendanceChartInstance = useRef<Chart | null>(null);
   const performanceChartInstance = useRef<Chart | null>(null);
+
+  // Auto-show AI insights when they're loaded
+  useEffect(() => {
+    if (aiInsightsData && !isLoadingInsights) {
+      setShowAIInsights(true);
+    }
+  }, [aiInsightsData, isLoadingInsights]);
 
   // Mock recommendations data - Replace with actual API call
   const [recommendations, setRecommendations] = useState<Recommendation[]>([
@@ -199,10 +216,10 @@ const StudentDetailPage: React.FC = () => {
                   return score >= 85
                     ? "#10b981"
                     : score >= 70
-                    ? "#3b82f6"
-                    : score >= 50
-                    ? "#f59e0b"
-                    : "#ef4444";
+                      ? "#3b82f6"
+                      : score >= 50
+                        ? "#f59e0b"
+                        : "#ef4444";
                 }),
                 borderWidth: 0,
                 borderRadius: 8,
@@ -372,11 +389,10 @@ const StudentDetailPage: React.FC = () => {
   const handlePostComment = () => {
     if (!newComment.trim()) return;
 
-    // TODO: Replace with actual API call
     const newRecommendation: Recommendation = {
       id: Date.now().toString(),
       author: {
-        name: "Current User", // Replace with actual user data
+        name: "Current User",
         role: "Teacher",
         avatar: "",
       },
@@ -392,7 +408,6 @@ const StudentDetailPage: React.FC = () => {
   const handlePostReply = (recommendationId: string) => {
     if (!replyContent.trim()) return;
 
-    // TODO: Replace with actual API call
     setRecommendations(
       recommendations.map((rec) => {
         if (rec.id === recommendationId) {
@@ -421,81 +436,19 @@ const StudentDetailPage: React.FC = () => {
     setReplyingTo(null);
   };
 
-  const generateAIInsights = () => {
-    if (!student) return null;
-
-    const insights = [];
-
-    // Attendance Insight
-    if (student.stats.attendanceRate >= 95) {
-      insights.push({
-        type: "positive",
-        icon: <CheckCircle className="w-5 h-5" />,
-        title: "Excellent Attendance",
-        description: `${student.firstName} maintains an outstanding attendance rate of ${student.stats.attendanceRate}%. This consistency is a strong foundation for academic success.`,
-      });
-    } else if (student.stats.attendanceRate < 80) {
-      insights.push({
-        type: "warning",
-        icon: <AlertTriangle className="w-5 h-5" />,
-        title: "Attendance Concern",
-        description: `Attendance rate of ${student.stats.attendanceRate}% is below target. Consider scheduling a parent meeting to address barriers to regular attendance.`,
-      });
+  const getInsightIcon = (type: string) => {
+    switch (type) {
+      case "positive":
+        return <CheckCircle className="w-5 h-5" />;
+      case "warning":
+        return <AlertTriangle className="w-5 h-5" />;
+      case "critical":
+        return <AlertTriangle className="w-5 h-5" />;
+      case "info":
+        return <TrendingDown className="w-5 h-5" />;
+      default:
+        return <Sparkles className="w-5 h-5" />;
     }
-
-    // Performance Insight
-    if (student.stats.performanceScore >= 85) {
-      insights.push({
-        type: "positive",
-        icon: <Award className="w-5 h-5" />,
-        title: "Strong Academic Performance",
-        description: `${student.firstName} excels academically with a ${student.stats.performanceScore}% average. Consider enrichment opportunities or advanced coursework.`,
-      });
-    } else if (student.stats.performanceScore < 70) {
-      insights.push({
-        type: "warning",
-        icon: <BookOpen className="w-5 h-5" />,
-        title: "Academic Support Needed",
-        description: `Performance average of ${student.stats.performanceScore}% suggests need for additional support. Recommend tutoring or study group participation.`,
-      });
-    }
-
-    // Dropout Risk Insight
-    if (student.stats.dropoutRisk >= 50) {
-      insights.push({
-        type: "critical",
-        icon: <AlertTriangle className="w-5 h-5" />,
-        title: "Intervention Required",
-        description: `Dropout risk of ${student.stats.dropoutRisk}% requires immediate intervention. Schedule parent conference and develop personalized support plan.`,
-      });
-    }
-
-    // Course-Specific Insights
-    const weakCourses = student.courses.filter(
-      (c) => c.performance && c.performance.total && c.performance.total < 70
-    );
-    if (weakCourses.length > 0) {
-      insights.push({
-        type: "info",
-        icon: <TrendingDown className="w-5 h-5" />,
-        title: "Subject-Specific Support",
-        description: `${student.firstName} is struggling in ${weakCourses.length} course${
-          weakCourses.length > 1 ? "s" : ""
-        }: ${weakCourses.map((c) => c.title).join(", ")}. Target these areas for improvement.`,
-      });
-    }
-
-    // Engagement Insight
-    if (student.stats.currentStreak >= 7) {
-      insights.push({
-        type: "positive",
-        icon: <Sparkles className="w-5 h-5" />,
-        title: "High Engagement",
-        description: `${student.stats.currentStreak}-day active streak shows strong engagement. Recognize this achievement publicly to encourage continued participation.`,
-      });
-    }
-
-    return insights;
   };
 
   if (isLoading) {
@@ -534,12 +487,10 @@ const StudentDetailPage: React.FC = () => {
     student.stats.dropoutRisk >= 70
       ? "critical"
       : student.stats.dropoutRisk >= 50
-      ? "warning"
-      : student.stats.dropoutRisk >= 30
-      ? "good"
-      : "excellent";
-
-  const aiInsights = generateAIInsights();
+        ? "warning"
+        : student.stats.dropoutRisk >= 30
+          ? "good"
+          : "excellent";
 
   return (
     <div className="min-h-screen">
@@ -707,23 +658,21 @@ const StudentDetailPage: React.FC = () => {
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-gray-600">Dropout Risk</p>
               <AlertTriangle
-                className={`w-4 h-4 ${
-                  student.stats.dropoutRisk >= 70
-                    ? "text-red-600"
-                    : student.stats.dropoutRisk >= 50
+                className={`w-4 h-4 ${student.stats.dropoutRisk >= 70
+                  ? "text-red-600"
+                  : student.stats.dropoutRisk >= 50
                     ? "text-orange-600"
                     : "text-green-600"
-                }`}
+                  }`}
               />
             </div>
             <p
-              className={`text-2xl font-bold ${
-                student.stats.dropoutRisk >= 70
-                  ? "text-red-600"
-                  : student.stats.dropoutRisk >= 50
+              className={`text-2xl font-bold ${student.stats.dropoutRisk >= 70
+                ? "text-red-600"
+                : student.stats.dropoutRisk >= 50
                   ? "text-orange-600"
                   : "text-green-600"
-              }`}
+                }`}
             >
               {student.stats.dropoutRisk}%
             </p>
@@ -731,97 +680,12 @@ const StudentDetailPage: React.FC = () => {
               {student.stats.dropoutRisk < 30
                 ? "Low risk level"
                 : student.stats.dropoutRisk < 50
-                ? "Medium risk level"
-                : student.stats.dropoutRisk < 70
-                ? "High risk level"
-                : "Critical risk level"}
+                  ? "Medium risk level"
+                  : student.stats.dropoutRisk < 70
+                    ? "High risk level"
+                    : "Critical risk level"}
             </p>
           </div>
-        </div>
-
-        {/* AI Insights Section */}
-        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">AI Insights</h3>
-                <p className="text-sm text-gray-600">Personalized recommendations powered by AI</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowAIInsights(!showAIInsights)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors text-sm font-medium text-purple-700"
-            >
-              <Sparkles className="w-4 h-4" />
-              {showAIInsights ? "Hide" : "Show"} Insights
-            </button>
-          </div>
-
-          {showAIInsights && aiInsights && (
-            <div className="space-y-3 mt-4">
-              {aiInsights.map((insight, index) => (
-                <div
-                  key={index}
-                  className={`p-4 rounded-lg border ${
-                    insight.type === "positive"
-                      ? "bg-green-50 border-green-200"
-                      : insight.type === "warning"
-                      ? "bg-orange-50 border-orange-200"
-                      : insight.type === "critical"
-                      ? "bg-red-50 border-red-200"
-                      : "bg-blue-50 border-blue-200"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`mt-0.5 ${
-                        insight.type === "positive"
-                          ? "text-green-600"
-                          : insight.type === "warning"
-                          ? "text-orange-600"
-                          : insight.type === "critical"
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    >
-                      {insight.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h4
-                        className={`font-semibold text-sm mb-1 ${
-                          insight.type === "positive"
-                            ? "text-green-900"
-                            : insight.type === "warning"
-                            ? "text-orange-900"
-                            : insight.type === "critical"
-                            ? "text-red-900"
-                            : "text-blue-900"
-                        }`}
-                      >
-                        {insight.title}
-                      </h4>
-                      <p
-                        className={`text-sm ${
-                          insight.type === "positive"
-                            ? "text-green-700"
-                            : insight.type === "warning"
-                            ? "text-orange-700"
-                            : insight.type === "critical"
-                            ? "text-red-700"
-                            : "text-blue-700"
-                        }`}
-                      >
-                        {insight.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Main Content */}
@@ -898,13 +762,12 @@ const StudentDetailPage: React.FC = () => {
                               <td className="p-3 text-center text-sm text-gray-700">
                                 {hasData && perf.assignment1 !== null ? (
                                   <span
-                                    className={`font-medium ${
-                                      perf.assignment1 >= 85
-                                        ? "text-green-600"
-                                        : perf.assignment1 >= 70
+                                    className={`font-medium ${perf.assignment1 >= 85
+                                      ? "text-green-600"
+                                      : perf.assignment1 >= 70
                                         ? "text-blue-600"
                                         : "text-orange-600"
-                                    }`}
+                                      }`}
                                   >
                                     {perf.assignment1}%
                                   </span>
@@ -915,13 +778,12 @@ const StudentDetailPage: React.FC = () => {
                               <td className="p-3 text-center text-sm text-gray-700">
                                 {hasData && perf.assignment2 !== null ? (
                                   <span
-                                    className={`font-medium ${
-                                      perf.assignment2 >= 85
-                                        ? "text-green-600"
-                                        : perf.assignment2 >= 70
+                                    className={`font-medium ${perf.assignment2 >= 85
+                                      ? "text-green-600"
+                                      : perf.assignment2 >= 70
                                         ? "text-blue-600"
                                         : "text-orange-600"
-                                    }`}
+                                      }`}
                                   >
                                     {perf.assignment2}%
                                   </span>
@@ -932,13 +794,12 @@ const StudentDetailPage: React.FC = () => {
                               <td className="p-3 text-center text-sm text-gray-700">
                                 {hasData && perf.cat !== null ? (
                                   <span
-                                    className={`font-medium ${
-                                      perf.cat >= 85
-                                        ? "text-green-600"
-                                        : perf.cat >= 70
+                                    className={`font-medium ${perf.cat >= 85
+                                      ? "text-green-600"
+                                      : perf.cat >= 70
                                         ? "text-blue-600"
                                         : "text-orange-600"
-                                    }`}
+                                      }`}
                                   >
                                     {perf.cat}%
                                   </span>
@@ -949,13 +810,12 @@ const StudentDetailPage: React.FC = () => {
                               <td className="p-3 text-center text-sm text-gray-700">
                                 {hasData && perf.exam !== null ? (
                                   <span
-                                    className={`font-medium ${
-                                      perf.exam >= 85
-                                        ? "text-green-600"
-                                        : perf.exam >= 70
+                                    className={`font-medium ${perf.exam >= 85
+                                      ? "text-green-600"
+                                      : perf.exam >= 70
                                         ? "text-blue-600"
                                         : "text-orange-600"
-                                    }`}
+                                      }`}
                                   >
                                     {perf.exam}%
                                   </span>
@@ -966,13 +826,12 @@ const StudentDetailPage: React.FC = () => {
                               <td className="p-3 text-center">
                                 {hasData && perf.total !== null ? (
                                   <span
-                                    className={`font-bold text-sm ${
-                                      perf.total >= 85
-                                        ? "text-green-600"
-                                        : perf.total >= 70
+                                    className={`font-bold text-sm ${perf.total >= 85
+                                      ? "text-green-600"
+                                      : perf.total >= 70
                                         ? "text-blue-600"
                                         : "text-orange-600"
-                                    }`}
+                                      }`}
                                   >
                                     {perf.total}%
                                   </span>
@@ -983,13 +842,12 @@ const StudentDetailPage: React.FC = () => {
                               <td className="p-3 text-center">
                                 {hasData && perf.grade ? (
                                   <span
-                                    className={`px-2 py-1 text-xs font-bold rounded ${
-                                      perf.total && perf.total >= 85
-                                        ? "bg-green-100 text-green-700"
-                                        : perf.total && perf.total >= 70
+                                    className={`px-2 py-1 text-xs font-bold rounded ${perf.total && perf.total >= 85
+                                      ? "bg-green-100 text-green-700"
+                                      : perf.total && perf.total >= 70
                                         ? "bg-blue-100 text-blue-700"
                                         : "bg-orange-100 text-orange-700"
-                                    }`}
+                                      }`}
                                   >
                                     {perf.grade}
                                   </span>
@@ -1031,13 +889,12 @@ const StudentDetailPage: React.FC = () => {
                           <h4 className="font-semibold text-sm text-gray-900">{course.title}</h4>
                           {hasPerformance && (
                             <span
-                              className={`text-xs font-bold px-2 py-1 rounded ${
-                                score >= 85
-                                  ? "bg-green-100 text-green-700"
-                                  : score >= 70
+                              className={`text-xs font-bold px-2 py-1 rounded ${score >= 85
+                                ? "bg-green-100 text-green-700"
+                                : score >= 70
                                   ? "bg-blue-100 text-blue-700"
                                   : "bg-orange-100 text-orange-700"
-                              }`}
+                                }`}
                             >
                               {grade}
                             </span>
@@ -1051,13 +908,12 @@ const StudentDetailPage: React.FC = () => {
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div
-                                className={`h-2 rounded-full ${
-                                  score >= 85
-                                    ? "bg-green-500"
-                                    : score >= 70
+                                className={`h-2 rounded-full ${score >= 85
+                                  ? "bg-green-500"
+                                  : score >= 70
                                     ? "bg-blue-500"
                                     : "bg-orange-500"
-                                }`}
+                                  }`}
                                 style={{ width: `${score}%` }}
                               />
                             </div>
@@ -1214,6 +1070,147 @@ const StudentDetailPage: React.FC = () => {
             )}
           </div>
         </div>
+
+
+        {/* AI Insights Section */}
+        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">AI-Powered Insights</h3>
+                <p className="text-sm text-gray-600">
+                  {isLoadingInsights
+                    ? "Generating personalized recommendations..."
+                    : "Personalized recommendations powered by AI"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {!isLoadingInsights && (
+                <button
+                  onClick={() => refetchInsights()}
+                  className="flex items-center gap-2 px-3 py-2 bg-white border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors text-sm font-medium text-purple-700"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+              )}
+              <button
+                onClick={() => setShowAIInsights(!showAIInsights)}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors text-sm font-medium text-purple-700"
+              >
+                <Sparkles className="w-4 h-4" />
+                {showAIInsights ? "Hide" : "Show"} Insights
+              </button>
+            </div>
+          </div>
+
+          {isLoadingInsights && (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 text-purple-500 animate-spin mx-auto mb-3" />
+                <p className="text-sm text-gray-600">Analyzing student performance...</p>
+              </div>
+            </div>
+          )}
+
+          {isInsightsError && !isLoadingInsights && (
+            <div className="text-center py-6">
+              <AlertTriangle className="w-8 h-8 text-orange-500 mx-auto mb-3" />
+              <p className="text-sm text-gray-600 mb-3">Failed to generate AI insights</p>
+              <button
+                onClick={() => refetchInsights()}
+                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {showAIInsights && aiInsightsData && !isLoadingInsights && (
+            <div className="space-y-4 mt-4">
+              {/* Summary */}
+              {aiInsightsData.summary && (
+                <div className="p-4 bg-white rounded-lg border border-purple-200">
+                  <h4 className="font-semibold text-sm text-purple-900 mb-2">Overall Assessment</h4>
+                  <p className="text-sm text-gray-700">{aiInsightsData.summary}</p>
+                </div>
+              )}
+
+              {/* Insights */}
+              {aiInsightsData.insights.map((insight, index) => (
+                <div
+                  key={index}
+                  className={`p-4 rounded-lg border ${insight.type === "positive"
+                    ? "bg-green-50 border-green-200"
+                    : insight.type === "warning"
+                      ? "bg-orange-50 border-orange-200"
+                      : insight.type === "critical"
+                        ? "bg-red-50 border-red-200"
+                        : "bg-blue-50 border-blue-200"
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 ${insight.type === "positive"
+                        ? "text-green-600"
+                        : insight.type === "warning"
+                          ? "text-orange-600"
+                          : insight.type === "critical"
+                            ? "text-red-600"
+                            : "text-blue-600"
+                        }`}
+                    >
+                      {getInsightIcon(insight.type)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4
+                          className={`font-semibold text-sm ${insight.type === "positive"
+                            ? "text-green-900"
+                            : insight.type === "warning"
+                              ? "text-orange-900"
+                              : insight.type === "critical"
+                                ? "text-red-900"
+                                : "text-blue-900"
+                            }`}
+                        >
+                          {insight.title}
+                        </h4>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full ${insight.priority === "high"
+                            ? "bg-red-100 text-red-700"
+                            : insight.priority === "medium"
+                              ? "bg-orange-100 text-orange-700"
+                              : "bg-blue-100 text-blue-700"
+                            }`}
+                        >
+                          {insight.priority}
+                        </span>
+                      </div>
+                      <p
+                        className={`text-sm ${insight.type === "positive"
+                          ? "text-green-700"
+                          : insight.type === "warning"
+                            ? "text-orange-700"
+                            : insight.type === "critical"
+                              ? "text-red-700"
+                              : "text-blue-700"
+                          }`}
+                      >
+                        {insight.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
 
         {/* Quick Actions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
