@@ -7,10 +7,11 @@ import { updateMessageSchema } from "@/types/Chat";
 
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId } = await getUserToken(req);
+        const { id } = await params;
 
         if (!userId) {
             return NextResponse.json(
@@ -35,7 +36,7 @@ export async function PATCH(
         }
 
         const message = await updateMessage(
-            params.id,
+            id,
             validationResult.data.Content,
             userId
         );
