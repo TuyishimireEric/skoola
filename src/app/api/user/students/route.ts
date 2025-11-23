@@ -5,7 +5,7 @@ import { OrganizationUser, User } from "@/server/db/schema";
 import { v4 as uuidv4 } from "uuid";
 import { and, eq, max, or } from "drizzle-orm";
 import { getUserToken } from "@/utils/getToken";
-import { getStudentList } from "@/server/queries/students";
+import { getStudentList, StudentListParams } from "@/server/queries/students";
 import bcrypt from "bcryptjs";
 
 interface StudentInput {
@@ -320,7 +320,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId, organizationId } = await getUserToken(req);
+    const { userId, organizationId, userRoleId } = await getUserToken(req);
     if (!userId) {
       return NextResponse.json(
         {
@@ -366,7 +366,7 @@ export async function GET(req: NextRequest) {
     // Validate sort order
     const validSortOrder = sortOrder === "asc" ? "asc" : "desc";
 
-    const payload = {
+    const payload: StudentListParams = {
       page,
       pageSize,
       searchText,
@@ -376,6 +376,10 @@ export async function GET(req: NextRequest) {
       activeOnly,
       grade,
     };
+
+    if (userRoleId === 6) {
+      payload.parentId = userId;
+    }
 
     const studentsData = await getStudentList(payload);
 

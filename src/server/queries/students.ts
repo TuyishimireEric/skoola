@@ -19,7 +19,7 @@ const SortableColumn = {
 // Create a type from the const object
 type SortableColumn = (typeof SortableColumn)[keyof typeof SortableColumn];
 
-interface StudentListParams {
+export interface StudentListParams {
   page: number;
   pageSize: number;
   searchText: string;
@@ -28,6 +28,7 @@ interface StudentListParams {
   sortOrder: string;
   activeOnly: boolean;
   grade: string | null;
+  parentId?: string;
 }
 
 export interface StudentListResponse {
@@ -95,6 +96,7 @@ export async function getStudentList(params: StudentListParams): Promise<{
     sortOrder,
     activeOnly,
     grade,
+    parentId, // Added parentId parameter
   } = params;
 
   const offset = (page - 1) * pageSize;
@@ -104,12 +106,14 @@ export async function getStudentList(params: StudentListParams): Promise<{
   today.setHours(0, 0, 0, 0);
   const todayISO = today.toISOString();
 
-  // Build WHERE conditions with grade filter
+  // Build WHERE conditions with grade filter and parentId filter
   const whereConditions = and(
     eq(OrganizationUser.OrganizationId, organizationId),
     eq(OrganizationUser.RoleId, 2), // Student role
     activeOnly ? eq(OrganizationUser.Status, "Active") : undefined,
     grade ? eq(OrganizationUser.Grade, grade) : undefined,
+    // Add parentId filter - only show students linked to this parent
+    parentId ? eq(ParentStudent.ParentId, parentId) : undefined,
     searchText
       ? or(
         ilike(User.FullName, `%${searchText}%`),
@@ -127,7 +131,11 @@ export async function getStudentList(params: StudentListParams): Promise<{
     })
     .from(User)
     .innerJoin(OrganizationUser, eq(User.Id, OrganizationUser.UserId))
-    .leftJoin(ParentStudent, eq(User.Id, ParentStudent.StudentId))
+  // Change to innerJoin when parentId is provided to ensure only linked students are counted
+  [parentId ? 'innerJoin' : 'leftJoin'](
+    ParentStudent,
+    eq(User.Id, ParentStudent.StudentId)
+  )
     .leftJoin(
       sql`"User" as parent_user`,
       sql`"ParentStudent"."ParentId" = parent_user."Id"`
@@ -268,7 +276,11 @@ export async function getStudentList(params: StudentListParams): Promise<{
       ) as performance_stats`,
       sql`"User"."Id" = performance_stats."StudentId"`
     )
-    .leftJoin(ParentStudent, eq(User.Id, ParentStudent.StudentId))
+  // Change to innerJoin when parentId is provided to ensure only linked students are returned
+  [parentId ? 'innerJoin' : 'leftJoin'](
+    ParentStudent,
+    eq(User.Id, ParentStudent.StudentId)
+  )
     .leftJoin(
       sql`"User" as parent_user`,
       sql`"ParentStudent"."ParentId" = parent_user."Id"`
