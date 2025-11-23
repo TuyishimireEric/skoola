@@ -14,11 +14,13 @@ import {
   CheckCircle,
   ChevronRight,
   Loader2,
+  MoreVertical,
 } from "lucide-react";
 import { useStudents } from "@/hooks/user/useStudents";
 import { StudentListResponse } from "@/server/queries/students";
 import { AddStudents } from "../users/AddStudents";
 import Link from "next/link";
+import { useClientSession } from "@/hooks/user/useClientSession";
 
 type ViewMode = "grid" | "list";
 type FilterStatus = "all" | "excellent" | "good" | "warning" | "critical";
@@ -30,11 +32,7 @@ const StudentsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState<number>(1);
-
-  // const [pageSize, setPageSize] = useState<number>(20);
-  // const [sortBy, setSortBy] = useState<string>("name");
-  // const [sortOrder, setSortOrder] = useState<string>("asc");
-  // const [activeOnly, setActiveOnly] = useState<boolean>(false);
+  const { userRoleId } = useClientSession();
 
   const pageSize = 20;
   const sortBy = "name";
@@ -78,7 +76,6 @@ const StudentsPage: React.FC = () => {
     if (score >= 50) return "warning";
     return "critical";
   };
-
 
   const getAttendance = (student: StudentListResponse) => {
     return student.attendanceRate || 0;
@@ -140,13 +137,13 @@ const StudentsPage: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "excellent":
-        return <CheckCircle className="w-4 h-4" />;
+        return <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />;
       case "good":
-        return <TrendingUp className="w-4 h-4" />;
+        return <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />;
       case "warning":
-        return <AlertTriangle className="w-4 h-4" />;
+        return <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />;
       case "critical":
-        return <TrendingDown className="w-4 h-4" />;
+        return <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4" />;
       default:
         return null;
     }
@@ -181,15 +178,15 @@ const StudentsPage: React.FC = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Failed to load students
           </h3>
           <button
             onClick={() => refetch()}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-full sm:w-auto"
           >
             Try Again
           </button>
@@ -208,59 +205,59 @@ const StudentsPage: React.FC = () => {
         />
       )}
 
-      <div className="py-6 max-w-7xl mx-auto pr-4">
+      <div className="py-4 px-3 max-w-7xl mx-auto">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-blue-600" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               </div>
-              <div>
-                <p className="text-xs text-gray-600">Total Students</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-600 truncate">Total Students</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   {isLoading ? "..." : stats.total}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-green-600" />
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
               </div>
-              <div>
-                <p className="text-xs text-gray-600">Avg Attendance</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-600 truncate">Avg Attendance</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   {isLoading ? "..." : `${stats.avgAttendance}%`}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-purple-600" />
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
               </div>
-              <div>
-                <p className="text-xs text-gray-600">Avg Grade</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-600 truncate">Avg Grade</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   {isLoading ? "..." : `${stats.avgGrade}%`}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
               </div>
-              <div>
-                <p className="text-xs text-gray-600">At Risk</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-600 truncate">At Risk</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   {isLoading ? "..." : stats.atRisk}
                 </p>
               </div>
@@ -269,124 +266,136 @@ const StudentsPage: React.FC = () => {
         </div>
 
         {/* Filters and Actions Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-            <div className="relative flex-1 w-full lg:max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search students by name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <Filter className="w-4 h-4" />
-                Filters
-              </button>
-
-              <div className="flex gap-1 border border-gray-300 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded transition-colors ${viewMode === "grid"
-                    ? "bg-green-500 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded transition-colors ${viewMode === "list"
-                    ? "bg-green-500 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-
-              <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-
-              <button onClick={() => setAddStudent(true)} className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all">
-                <UserPlus className="w-4 h-4" />
-                Add Student
-              </button>
-            </div>
-          </div>
-
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Grade Level
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {grades.map((gradeOption) => (
-                      <button
-                        key={gradeOption}
-                        onClick={() => setSelectedGrade(gradeOption)}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${selectedGrade === gradeOption
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
-                      >
-                        {gradeOption === "all" ? "All Grades" : gradeOption}
-                      </button>
-                    ))}
-                  </div>
+        {userRoleId !== 6 && (
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {/* Search and View Toggle Row */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search students by name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Student Status
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {["all", "excellent", "good", "warning", "critical"].map(
-                      (status) => (
-                        <button
-                          key={status}
-                          onClick={() =>
-                            setStatusFilter(status as FilterStatus)
-                          }
-                          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors capitalize ${statusFilter === status
-                            ? "bg-green-500 text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            }`}
-                        >
-                          {status}
-                        </button>
-                      )
-                    )}
+                <div className="flex gap-2 justify-between sm:justify-start">
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex-1 sm:flex-none justify-center"
+                  >
+                    <Filter className="w-4 h-4" />
+                    <span className="hidden xs:inline">Filters</span>
+                  </button>
+
+                  <div className="flex gap-1 border border-gray-300 rounded-lg p-1">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`p-2 rounded transition-colors ${viewMode === "grid"
+                        ? "bg-green-500 text-white"
+                        : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                    >
+                      <Grid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`p-2 rounded transition-colors ${viewMode === "list"
+                        ? "bg-green-500 text-white"
+                        : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Loading students...</p>
+              {/* Action Buttons Row */}
+              <div className="flex gap-2 flex-wrap">
+                <button className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex-1 sm:flex-none justify-center">
+                  <Download className="w-4 h-4" />
+                  <span className="hidden xs:inline">Export</span>
+                </button>
+
+                <button
+                  onClick={() => setAddStudent(true)}
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all flex-1 sm:flex-none justify-center"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Add Student</span>
+                </button>
+              </div>
+
+              {/* Filters Panel */}
+              {showFilters && (
+                <div className="mt-2 pt-3 border-t border-gray-200">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Grade Level
+                      </label>
+                      <div className="flex flex-wrap gap-1 sm:gap-2">
+                        {grades.map((gradeOption) => (
+                          <button
+                            key={gradeOption}
+                            onClick={() => setSelectedGrade(gradeOption)}
+                            className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex-shrink-0 ${selectedGrade === gradeOption
+                              ? "bg-green-500 text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              }`}
+                          >
+                            {gradeOption === "all" ? "All" : gradeOption.replace("Grade ", "G")}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Student Status
+                      </label>
+                      <div className="flex flex-wrap gap-1 sm:gap-2">
+                        {["all", "excellent", "good", "warning", "critical"].map(
+                          (status) => (
+                            <button
+                              key={status}
+                              onClick={() =>
+                                setStatusFilter(status as FilterStatus)
+                              }
+                              className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-colors capitalize flex-shrink-0 ${statusFilter === status
+                                ? "bg-green-500 text-white"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                }`}
+                            >
+                              {status === "all" ? "All" : status}
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="max-w-full">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
+            <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-green-500 animate-spin mx-auto mb-3 sm:mb-4" />
+            <p className="text-gray-600 text-sm sm:text-base">Loading students...</p>
+          </div>
+        )}
+
+        <div className="w-full">
           {/* Students Display - Grid View */}
           {!isLoading && viewMode === "grid" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-w-full">
+            <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredStudents.map((student) => {
                 const studentStatus = getStatusFromScore(student.performanceScore || 0);
                 const attendance = getAttendance(student);
@@ -396,45 +405,45 @@ const StudentsPage: React.FC = () => {
                 return (
                   <div
                     key={student.id}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer group"
+                    className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-all cursor-pointer group"
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-start justify-between mb-3 sm:mb-4">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
                         {student.avatar ? (
                           <img
                             src={student.avatar}
                             alt={student.fullName}
-                            className="w-12 h-12 rounded-full object-cover"
+                            className="w-8 h-8 sm:w-10 sm:h-12 rounded-full object-cover flex-shrink-0"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold">
+                          <div className="w-8 h-8 sm:w-10 sm:h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0">
                             {displayAvatar}
                           </div>
                         )}
-                        <div>
-                          <h3 className="font-bold text-sm text-gray-900 group-hover:text-green-600 transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-bold text-xs sm:text-sm text-gray-900 group-hover:text-green-600 transition-colors truncate">
                             {student.fullName}
                           </h3>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 truncate">
                             {student.grade || "Not Assigned"}
                           </p>
                         </div>
                       </div>
                       <div
-                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border ${getStatusColor(
+                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border flex-shrink-0 ml-2 ${getStatusColor(
                           studentStatus
                         )}`}
                       >
                         {getStatusIcon(studentStatus)}
-                        <span className="capitalize">{studentStatus}</span>
+                        <span className="hidden xs:inline capitalize">{studentStatus}</span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="grid grid-cols-3 gap-2 mb-3 sm:mb-4">
                       <div className="text-center p-2 bg-gray-50 rounded-lg">
-                        <p className="text-xs text-gray-600 mb-1">Attendance</p>
+                        <p className="text-xs text-gray-600 mb-1 truncate">Attend</p>
                         <p
-                          className={`text-sm font-bold ${attendance >= 90
+                          className={`text-xs sm:text-sm font-bold ${attendance >= 90
                             ? "text-green-600"
                             : attendance >= 80
                               ? "text-yellow-600"
@@ -445,15 +454,15 @@ const StudentsPage: React.FC = () => {
                         </p>
                       </div>
                       <div className="text-center p-2 bg-gray-50 rounded-lg">
-                        <p className="text-xs text-gray-600 mb-1">Performance</p>
-                        <p className="text-sm font-bold text-gray-900">
+                        <p className="text-xs text-gray-600 mb-1 truncate">Perf</p>
+                        <p className="text-xs sm:text-sm font-bold text-gray-900">
                           {student.performanceScore || 0}%
                         </p>
                       </div>
                       <div className="text-center p-2 bg-gray-50 rounded-lg">
-                        <p className="text-xs text-gray-600 mb-1">Risk</p>
+                        <p className="text-xs text-gray-600 mb-1 truncate">Risk</p>
                         <p
-                          className={`text-sm font-bold ${dropoutRisk >= 70
+                          className={`text-xs sm:text-sm font-bold ${dropoutRisk >= 70
                             ? "text-red-600"
                             : dropoutRisk >= 50
                               ? "text-orange-600"
@@ -466,12 +475,15 @@ const StudentsPage: React.FC = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Link href={`/students/${student.id}`} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all">
-                        View Profile
-                        <ChevronRight className="w-3 h-3" />
+                      <Link
+                        href={`/students/${student.id}`}
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all min-w-0"
+                      >
+                        <span className="truncate">View Profile</span>
+                        <ChevronRight className="w-3 h-3 flex-shrink-0" />
                       </Link>
-                      <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <Mail className="w-4 h-4 text-gray-600" />
+                      <button className="p-1.5 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0">
+                        <Mail className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                       </button>
                     </div>
                   </div>
@@ -482,30 +494,30 @@ const StudentsPage: React.FC = () => {
 
           {/* Students Display - List View */}
           {!isLoading && viewMode === "list" && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                      <th className="text-left p-3 sm:p-4 text-xs font-semibold text-gray-700">
                         Student
                       </th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                      <th className="text-left p-3 sm:p-4 text-xs font-semibold text-gray-700 hidden sm:table-cell">
                         Grade
                       </th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                      <th className="text-left p-3 sm:p-4 text-xs font-semibold text-gray-700 hidden md:table-cell">
                         Status
                       </th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                      <th className="text-left p-3 sm:p-4 text-xs font-semibold text-gray-700">
                         Attendance
                       </th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                      <th className="text-left p-3 sm:p-4 text-xs font-semibold text-gray-700 hidden lg:table-cell">
                         Performance
                       </th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
-                        Risk Level
+                      <th className="text-left p-3 sm:p-4 text-xs font-semibold text-gray-700">
+                        Risk
                       </th>
-                      <th className="text-left p-4 text-xs font-semibold text-gray-700">
+                      <th className="text-left p-3 sm:p-4 text-xs font-semibold text-gray-700">
                         Actions
                       </th>
                     </tr>
@@ -522,33 +534,36 @@ const StudentsPage: React.FC = () => {
                           key={student.id}
                           className="hover:bg-gray-50 transition-colors"
                         >
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
+                          <td className="p-3 sm:p-4">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                               {student.avatar ? (
                                 <img
                                   src={student.avatar}
                                   alt={student.fullName}
-                                  className="w-10 h-10 rounded-full object-cover"
+                                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
                                 />
                               ) : (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0">
                                   {displayAvatar}
                                 </div>
                               )}
-                              <div>
-                                <p className="font-semibold text-sm text-gray-900">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-semibold text-xs sm:text-sm text-gray-900 truncate">
                                   {student.fullName}
                                 </p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-gray-500 truncate hidden xs:block">
                                   {student.email || student.userName}
+                                </p>
+                                <p className="text-xs text-gray-500 sm:hidden">
+                                  {student.grade || "Not Assigned"}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4 text-xs text-gray-700">
+                          <td className="p-3 sm:p-4 text-xs text-gray-700 hidden sm:table-cell">
                             {student.grade || "Not Assigned"}
                           </td>
-                          <td className="p-4">
+                          <td className="p-3 sm:p-4 hidden md:table-cell">
                             <span
                               className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border ${getStatusColor(
                                 studentStatus
@@ -558,9 +573,9 @@ const StudentsPage: React.FC = () => {
                               <span className="capitalize">{studentStatus}</span>
                             </span>
                           </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 max-w-20 bg-gray-200 rounded-full h-2">
+                          <td className="p-3 sm:p-4">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="flex-1 max-w-16 sm:max-w-20 bg-gray-200 rounded-full h-2 flex-shrink-0">
                                 <div
                                   className={`h-2 rounded-full ${attendance >= 90
                                     ? "bg-green-500"
@@ -571,17 +586,17 @@ const StudentsPage: React.FC = () => {
                                   style={{ width: `${attendance}%` }}
                                 />
                               </div>
-                              <span className="text-sm font-semibold text-gray-900">
+                              <span className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">
                                 {attendance}%
                               </span>
                             </div>
                           </td>
-                          <td className="p-4 text-sm font-semibold text-gray-900">
+                          <td className="p-3 sm:p-4 text-sm font-semibold text-gray-900 hidden lg:table-cell">
                             {student.performanceScore || 0}%
                           </td>
-                          <td className="p-4">
+                          <td className="p-3 sm:p-4">
                             <span
-                              className={`text-sm font-bold ${dropoutRisk >= 70
+                              className={`text-xs sm:text-sm font-bold whitespace-nowrap ${dropoutRisk >= 70
                                 ? "text-red-600"
                                 : dropoutRisk >= 50
                                   ? "text-orange-600"
@@ -591,12 +606,15 @@ const StudentsPage: React.FC = () => {
                               {dropoutRisk}%
                             </span>
                           </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                                <Mail className="w-4 h-4 text-gray-600" />
+                          <td className="p-3 sm:p-4">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <button className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                                <Mail className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                               </button>
-                              <Link href={`/students/${student.id}`} className="px-3 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors">
+                              <Link
+                                href={`/students/${student.id}`}
+                                className="px-2 sm:px-3 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors whitespace-nowrap"
+                              >
                                 View
                               </Link>
                             </div>
@@ -610,8 +628,8 @@ const StudentsPage: React.FC = () => {
 
               {/* Pagination */}
               {studentsData && studentsData.totalPages > 1 && (
-                <div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
+                <div className="border-t border-gray-200 px-3 sm:px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                     Showing page {page} of {studentsData.totalPages} ({studentsData.totalCount} total students)
                   </div>
                   <div className="flex gap-2">
@@ -638,14 +656,14 @@ const StudentsPage: React.FC = () => {
 
         {/* Empty State */}
         {!isLoading && filteredStudents.length === 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-gray-400" />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 lg:p-12 text-center">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <Search className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
               No students found
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 text-sm sm:text-base mb-4 max-w-md mx-auto">
               Try adjusting your filters or search query
             </p>
             <button
@@ -654,7 +672,7 @@ const StudentsPage: React.FC = () => {
                 setSelectedGrade("all");
                 setStatusFilter("all");
               }}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm sm:text-base"
             >
               Clear Filters
             </button>
