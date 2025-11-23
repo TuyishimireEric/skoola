@@ -151,16 +151,16 @@ const SideNav = () => {
       {/* Chat Section */}
       <div className="p-4 border-t border-gray-200 space-y-1">
         <button
-          onClick={() => handleNavigation("/dashboard/chat")}
+          onClick={() => handleNavigation("/chat")}
           className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${isActive("/dashboard/chat")
               ? "bg-gradient-to-r from-green-500 to-amber-500 text-white shadow-lg shadow-green-500/30"
               : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
-          aria-current={isActive("/dashboard/chat") ? "page" : undefined}
+          aria-current={isActive("/chat") ? "page" : undefined}
         >
           <MessageSquare className="w-5 h-5" />
           {!isCollapsed && <span>Chat</span>}
-          {!isCollapsed && isActive("/dashboard/chat") && (
+          {!isCollapsed && isActive("/chat") && (
             <span className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></span>
           )}
         </button>
