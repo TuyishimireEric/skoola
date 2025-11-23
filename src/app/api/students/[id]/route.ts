@@ -6,7 +6,7 @@ import { getStudentDetail } from "@/server/queries/student-details";
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId, organizationId } = await getUserToken(req);
@@ -22,7 +22,7 @@ export async function GET(
             );
         }
 
-        const studentId = params.id;
+        const { id: studentId } = await params;
 
         const studentDetail = await getStudentDetail(studentId, organizationId);
 
