@@ -20,7 +20,7 @@ import {
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useStudents } from "@/hooks/user/useStudents";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { CoursePerformanceDataI } from "@/types/Course";
 import showToast from "@/utils/showToast";
 
@@ -47,7 +47,6 @@ const ManagePerformancePage: React.FC = () => {
     const params = useParams();
     const searchParams = useSearchParams();
     const courseId = params.id as string;
-    const queryClient = useQueryClient();
 
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [selectedGrade, setSelectedGrade] = useState<string>("all");
@@ -518,8 +517,6 @@ const ManagePerformancePage: React.FC = () => {
             if (!response.ok) {
                 throw new Error(result.message || "Failed to save performance");
             }
-
-            queryClient.invalidateQueries({ queryKey: ["student-detail"] }),
 
                 showToast("Performance saved successfully!", "success");
             setHasUnsavedChanges(false);

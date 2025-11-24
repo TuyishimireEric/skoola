@@ -7,7 +7,6 @@ import {
   Users,
   CalendarCheck,
   BookOpen,
-  MessageSquare,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -99,14 +98,6 @@ const SideNav = () => {
 
   const toggleMobileMenu = () => {
     setIsMobileOpen(!isMobileOpen);
-  };
-
-  const toggleSidebar = () => {
-    if (isMobile) {
-      setIsMobileOpen(!isMobileOpen);
-    } else {
-      setIsCollapsed(!isCollapsed);
-    }
   };
 
   // Close mobile menu when clicking outside (for mobile)

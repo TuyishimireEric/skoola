@@ -299,13 +299,6 @@ const DropoutRiskChart: React.FC<DropoutRiskChartProps> = ({ data }) => {
   return <canvas ref={chartRef} />;
 };
 
-interface AIRecommendation {
-  priority: "high" | "medium";
-  student: string;
-  message: string;
-  action: string;
-}
-
 const Dashboard: React.FC = () => {
   const [selectedGrade, setSelectedGrade] = useState<string>("");
   const [showGradeDropdown, setShowGradeDropdown] = useState(false);

@@ -1,27 +1,8 @@
 import {
-  ArrowLeft,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  User,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Award,
-  BookOpen,
-  MessageSquare,
-  Bell,
-  Download,
-  Edit,
-  MoreVertical,
-  Loader2,
-  Send,
-  Sparkles,
-  Bot,
-  Users,
-  RefreshCw,
+    Phone,
+    BookOpen,
+    MessageSquare,
+    Download
 } from "lucide-react";
 
 export const QuickActions = () => {
@@ -35,12 +16,12 @@ export const QuickActions = () => {
                         Send Message
                     </span>
                 </button>
-                    <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
-                        <Phone className="w-6 h-6 text-gray-600 group-hover:text-green-600" />
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
-                            Call Parent
-                        </span>
-                    </button>
+                <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
+                    <Phone className="w-6 h-6 text-gray-600 group-hover:text-green-600" />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
+                        Call Parent
+                    </span>
+                </button>
                 <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
                     <BookOpen className="w-6 h-6 text-gray-600 group-hover:text-green-600" />
                     <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
