@@ -599,8 +599,8 @@ const Dashboard: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <Link href={`/students/${student.id}`} className="flex-1 px-auto py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all">
+                  <div className="flex justify-between gap-2">
+                    <Link href={`/students/${student.id}`} className="flex-1 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition-all">
                       View Profile
                     </Link>
                   </div>
