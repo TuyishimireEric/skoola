@@ -38,12 +38,6 @@ const rolePermissions: Record<number, string[]> = {
   ],
   [ROLES.USER]: [
     "/",
-    "/games",
-    "/profile",
-    "/about",
-    "/contact",
-    "/donate",
-    "/organizations",
   ],
   [ROLES.PARENT]: [
     "/",
@@ -60,16 +54,7 @@ const rolePermissions: Record<number, string[]> = {
 // Public routes that don't require authentication
 const publicRoutes = [
   "/",
-  "/about",
-  "/contact",
-  "/games",
-  "/donate",
-  "/login",
-  "/ganzaa",
-  "/organizations",
-  "/register",
-  "/auth/error",
-  "/auth/verify",
+  "/login"
 ];
 
 // Static assets and API routes that should always be accessible

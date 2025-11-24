@@ -312,24 +312,6 @@ const Dashboard: React.FC = () => {
 
   const { data: dashboardData, isLoading, isError, error } = useDashboard(selectedGrade);
 
-  // Mock AI Recommendations (as requested)
-  const aiRecommendations: AIRecommendation[] = [
-    {
-      priority: "high",
-      student: "Emmanuel Nkurunziza",
-      message:
-        "Schedule urgent parent meeting - attendance dropped 25% with declining grades",
-      action: "Contact Parent",
-    },
-    {
-      priority: "medium",
-      student: "Grace Uwase",
-      message:
-        "Consider peer support program - showing signs of social withdrawal",
-      action: "View Details",
-    },
-  ];
-
   const getRiskColor = (risk: number): string => {
     if (risk >= 70) return "text-red-600 bg-red-100";
     if (risk >= 60) return "text-orange-600 bg-orange-100";
@@ -417,7 +399,7 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen ">
       <main className="py-6 max-w-7xl mx-auto px-4">
         {/* Grade Filter */}
         <div className="mb-6 flex items-center justify-between">
@@ -537,7 +519,7 @@ const Dashboard: React.FC = () => {
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             Class Performance Distribution
           </h2>
-          <div className="h-64">
+          <div className="h-64 max-w-3xl">
             <PerformanceDistributionChart data={dashboardData.performanceDistribution} />
           </div>
         </div>
@@ -665,52 +647,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         )}
-
-        {/* AI Recommendations (Mock Data) */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            AI-Powered Recommendations
-          </h2>
-          <div className="space-y-3">
-            {aiRecommendations.map((rec, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`p-2 rounded-lg ${rec.priority === "high" ? "bg-red-100" : "bg-orange-100"
-                      }`}
-                  >
-                    <AlertTriangle
-                      className={`w-5 h-5 ${rec.priority === "high" ? "text-red-600" : "text-orange-600"
-                        }`}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className={`text-xs font-bold px-2 py-1 rounded ${rec.priority === "high"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-orange-100 text-orange-700"
-                          }`}
-                      >
-                        {rec.priority.toUpperCase()} PRIORITY
-                      </span>
-                      <span className="text-sm font-medium text-gray-700">
-                        {rec.student}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">{rec.message}</p>
-                  </div>
-                  <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors whitespace-nowrap">
-                    {rec.action}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
       </main>
     </div>

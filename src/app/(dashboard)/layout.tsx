@@ -15,7 +15,7 @@ export default function RootLayout({
     <>
       <div className="flex gap-4 z-20 h-[100vh] w-full items-center relative font-comic bg-gradient-to-br from-white via-amber-50 to-white ">
         <SideNav />
-        <div className="h-full flex-grow z-20 p-4">{children}</div>
+        <div className="h-full flex-1 flex-grow z-20 md:p-4">{children}</div>
       </div>
     </>
   );
