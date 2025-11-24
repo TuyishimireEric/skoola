@@ -9,38 +9,6 @@ import { Login } from "@/components/auth/Login";
 import Link from "next/link";
 
 const LoginPage = () => {
-  // const [userType, setUserType] = useState("teacher");
-  // const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState("");
-
-  // const userTypes = [
-  //   {
-  //     id: "teacher",
-  //     label: "Teacher",
-  //     icon: <GraduationCap className="w-5 h-5" />,
-  //     color: "green",
-  //   },
-  //   {
-  //     id: "student",
-  //     label: "Student",
-  //     icon: <BookOpen className="w-5 h-5" />,
-  //     color: "amber",
-  //   },
-  //   {
-  //     id: "parent",
-  //     label: "Parent",
-  //     icon: <Users className="w-5 h-5" />,
-  //     color: "green",
-  //   },
-  // ];
-
-  // const handleSubmit = () => {
-  //   if (!email || !password) {
-  //     alert("Please fill in all fields");
-  //     return;
-  //   }
-  //   alert(`Logging in as ${userType}\nEmail: ${email}`);
-  // };
 
   return (
     <div className="min-h-screen w-full flex overflow-hidden bg-gradient-to-br from-green-50 via-amber-50 to-green-50 relative">

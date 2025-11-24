@@ -230,7 +230,7 @@ export const LoginForm = ({ onClose, showForm }: LoginFormProps) => {
                   required
                 />
 
-                <div className="flex justify-end animate__animated animate__fadeIn -mt-4">
+                {/* <div className="flex justify-end animate__animated animate__fadeIn -mt-4">
                   <button
                     type="button"
                     onClick={() => setForgotPassword(true)}
@@ -238,7 +238,7 @@ export const LoginForm = ({ onClose, showForm }: LoginFormProps) => {
                   >
                     Forgot your password? 🤔
                   </button>
-                </div>
+                </div> */}
               </>
             )}
 
