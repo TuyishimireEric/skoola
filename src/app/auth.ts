@@ -129,7 +129,7 @@ export const options: NextAuthOptions = {
             const newUser = await addNewUser({
               FullName: user.name as string,
               Email: user.email as string,
-              Password: randomBytes(32).toString("hex"),
+              Password: process.env.DEFAULT_PASS as string,
               ImageUrl: user.image as string,
               GoogleId: user.id as string,
               IsVerified: true,

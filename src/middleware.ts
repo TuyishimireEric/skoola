@@ -41,13 +41,7 @@ const rolePermissions: Record<number, string[]> = {
   ],
   [ROLES.PARENT]: [
     "/",
-    "/parent",
-    "/kids",
-    "/games",
-    "/profile",
-    "/about",
-    "/contact",
-    "/donate",
+    "/students",
   ],
 };
 
